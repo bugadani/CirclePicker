@@ -46,6 +46,8 @@
         android:padding="30dp"
         android:layout_toEndOf="@id/scroll"
         android:layout_alignParentStart="false"
-        android:layout_alignParentTop="true"/>
+        android:layout_alignParentTop="true"
+        app:show_divider="true"
+        app:step="10"/>
 
 </RelativeLayout>

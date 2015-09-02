@@ -7,6 +7,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Paint.Align;
 import android.graphics.Paint.Style;
+import android.graphics.PointF;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.os.Bundle;
@@ -17,13 +18,16 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
+import com.biowink.clue.ArcUtils;
+
 import hu.bugadani.circlepickerlib.formatter.DecimalValueFormatter;
 import hu.bugadani.circlepickerlib.formatter.ValueFormatter;
 
 public class CirclePickerView extends View
 {
 
-    private static final String TAG = "CirclePickerView";
+    private static final String TAG     = "CirclePickerView";
+    private              PointF mOrigin = new PointF(0, 0);
 
     public interface OnValueChangeListener
     {
@@ -230,6 +234,7 @@ public class CirclePickerView extends View
 
     private static final int   TEXT_SIZE_DEFAULT_VALUE            = 25;
     private static final float COLOR_WHEEL_STROKE_WIDTH_DEF_VALUE = 8;
+    private static final float DIVIDER_WIDTH_DEF_VALUE            = 3;
     private static final float POINTER_RADIUS_DEF_VALUE           = 8;
     private static final float WHEEL_RADIUS_DEF_VALUE             = 0;
     private static final float MAX_POINT_DEF_VALUE                = Float.MAX_VALUE;
@@ -265,6 +270,11 @@ public class CirclePickerView extends View
      * {@code Paint} instance used to draw the value text.
      */
     private Paint mTextPaint;
+
+    /**
+     * {@code Paint} instance used to draw the divider lines.
+     */
+    private Paint mDividerPaint;
 
     /**
      * The radius of the pointer (in pixels).
@@ -317,6 +327,10 @@ public class CirclePickerView extends View
      */
     private ValueFormatter mValueFormatter = new DecimalValueFormatter(1);
 
+    /**
+     * Show a divider between values
+     */
+    private boolean mShowDivider;
     private boolean mShowValueText;
     private boolean mShowPointer;
     private float   mWheelRadius;
@@ -374,6 +388,7 @@ public class CirclePickerView extends View
         );
 
         mShowValueText = a.getBoolean(R.styleable.CirclePickerView_show_text, true);
+        mShowDivider = a.getBoolean(R.styleable.CirclePickerView_show_divider, false);
         mShowPointer = a.getBoolean(R.styleable.CirclePickerView_show_pointer, true);
         mInteractionEnabled = a.getBoolean(R.styleable.CirclePickerView_interactive, true);
 
@@ -411,6 +426,10 @@ public class CirclePickerView extends View
                 R.styleable.CirclePickerView_wheel_stroke_width,
                 COLOR_WHEEL_STROKE_WIDTH_DEF_VALUE
         );
+        float dividerWidth = a.getDimension(
+                R.styleable.CirclePickerView_divider_width,
+                DIVIDER_WIDTH_DEF_VALUE
+        );
 
         //Get color values
         int wheelColor = a.getColor(
@@ -438,6 +457,10 @@ public class CirclePickerView extends View
         mWheelBackgroundPaint.setColor(wheelBackgroundColor);
         mWheelBackgroundPaint.setStyle(Style.STROKE);
         mWheelBackgroundPaint.setStrokeWidth(wheelWidth);
+
+        mDividerPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        mDividerPaint.setColor(wheelBackgroundColor);
+        mDividerPaint.setStrokeWidth(dividerWidth);
 
         mWheelColorPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         mWheelColorPaint.setColor(wheelColor);
@@ -481,54 +504,79 @@ public class CirclePickerView extends View
         float backgroundSweepAngle = (360 - colorSweepAngle);
 
         if (value == 0) {
-            // Draw the "background" of the wheel.
-            canvas.drawArc(
-                    mWheelRectangle,
+            // Draw the wheel.
+            ArcUtils.drawArc(
+                    canvas,
+                    mOrigin,
+                    mWheelRadius,
                     0,
                     360,
-                    false,
                     mWheelBackgroundPaint
             );
         } else if (value > 0) {
-            // Draw the wheel.
-            canvas.drawArc(
-                    mWheelRectangle,
-                    colorStartAngle,
-                    colorSweepAngle,
-                    false,
-                    mWheelColorPaint
-            );
-
             // Draw the "background" of the wheel.
-            canvas.drawArc(
-                    mWheelRectangle,
+            ArcUtils.drawArc(
+                    canvas,
+                    mOrigin,
+                    mWheelRadius,
                     backgroundStartAngle,
                     backgroundSweepAngle,
-                    false,
                     mWheelBackgroundPaint
+            );
+            // Draw the wheel.
+            ArcUtils.drawArc(
+                    canvas,
+                    mOrigin,
+                    mWheelRadius,
+                    colorStartAngle,
+                    colorSweepAngle,
+                    mWheelColorPaint
             );
         } else {
             // Draw the "background" of the wheel.
-            canvas.drawArc(
-                    mWheelRectangle,
+            ArcUtils.drawArc(
+                    canvas,
+                    mOrigin,
+                    mWheelRadius,
                     backgroundStartAngle,
                     backgroundSweepAngle,
-                    false,
                     mWheelColorPaint
             );
             // Draw the wheel.
-            canvas.drawArc(
-                    mWheelRectangle,
+            ArcUtils.drawArc(
+                    canvas,
+                    mOrigin,
+                    mWheelRadius,
                     colorStartAngle,
                     colorSweepAngle,
-                    false,
                     mWheelBackgroundPaint
             );
         }
 
+        drawDivider(canvas);
         drawPointer(canvas, backgroundStartAngle);
         canvas.rotate(-mAngleHelper.mZeroOffset);
         drawValueText(canvas, value);
+    }
+
+    private void drawDivider(Canvas canvas)
+    {
+        //Draw the divider lines if enabled
+        if (mShowDivider) {
+            double degreePerStep = mAngleHelper.mStep / mAngleHelper.mValuePerDegree;
+            float length = mWheelColorPaint.getStrokeWidth() / 2 + 2;
+            for (int i = 0; i < 360; i += degreePerStep) {
+                canvas.rotate(i);
+                canvas.drawLine(
+                        0,
+                        mWheelRadius + length,
+                        0,
+                        mWheelRadius - length,
+                        mDividerPaint
+                );
+                canvas.rotate(-i);
+            }
+        }
     }
 
     private void drawValueText(Canvas canvas, double value)
@@ -578,8 +626,10 @@ public class CirclePickerView extends View
         if (mWheelRadius == 0) {
             int widthMode = MeasureSpec.getMode(widthMeasureSpec);
             if (widthMode != MeasureSpec.UNSPECIFIED) {
-                int width = MeasureSpec.getSize(widthMeasureSpec) - getPaddingLeft() - getPaddingRight();
-                int height = MeasureSpec.getSize(heightMeasureSpec) - getPaddingTop() - getPaddingBottom();
+                int width = MeasureSpec.getSize(widthMeasureSpec) - getPaddingLeft() -
+                            getPaddingRight();
+                int height = MeasureSpec.getSize(heightMeasureSpec) - getPaddingTop() -
+                             getPaddingBottom();
 
                 int min = Math.min(width, height);
                 setMeasuredDimension(min, min);

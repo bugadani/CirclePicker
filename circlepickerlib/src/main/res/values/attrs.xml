@@ -7,6 +7,8 @@
         <attr name="cycle_value" format="float"/>
         <attr name="max" format="float"/>
         <attr name="min" format="float"/>
+        <attr name="show_divider" format="boolean"/>
+        <attr name="divider_width" format="dimension"/>
         <attr name="zero_offset" format="integer"/>
         <attr name="show_text" format="boolean"/>
         <attr name="interactive" format="boolean"/>
