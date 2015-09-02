@@ -1,0 +1,51 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:app="http://schemas.android.com/apk/res-auto"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:orientation="horizontal"
+              android:paddingBottom="@dimen/activity_vertical_margin"
+              android:paddingLeft="@dimen/activity_horizontal_margin"
+              android:paddingRight="@dimen/activity_horizontal_margin"
+              android:paddingTop="@dimen/activity_vertical_margin">
+
+    <ScrollView
+        android:id="@+id/scroll"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center_horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Zero Offset"/>
+
+            <hu.bugadani.circlepickerlib.CirclePickerView
+                android:id="@+id/rotation"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:cycle_value="360"
+                app:max="180"
+                app:min="-180"
+                app:wheel_radius="50dp"/>
+        </LinearLayout>
+    </ScrollView>
+
+    <hu.bugadani.circlepickerlib.CirclePickerView
+        android:id="@+id/picker"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true"
+        android:padding="30dp"
+        android:layout_toEndOf="@id/scroll"
+        android:layout_alignParentStart="false"
+        android:layout_alignParentTop="true"/>
+
+</RelativeLayout>
