@@ -1,26 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <declare-styleable name="CirclePickerView">
-        <attr name="wheel_stroke_width" format="dimension" />
-        <attr name="pointer_radius" format="dimension" />
-        <attr name="wheel_radius" format="dimension" />
-        <attr name="cycle_value" format="float"/>
+        <!-- Wheel related attributes -->
+        <attr name="wheelRadius" format="dimension"/>
+        <attr name="wheelStrokeWidth" format="dimension"/>
+        <attr name="wheelActiveColor" format="color"/>
+        <attr name="wheelBackgroundColor" format="color"/>
+
+        <!-- Divider related attributes -->
+        <attr name="showDivider" format="boolean"/>
+        <attr name="dividerColor" format="color"/>
+        <attr name="dividerWidth" format="dimension"/>
+
+        <!-- Pointer related attributes -->
+        <attr name="showPointer" format="boolean"/>
+        <attr name="pointerRadius" format="dimension"/>
+        <attr name="pointerColor" format="color"/>
+        <attr name="pointerHaloColor" format="color"/>
+        <attr name="pointerHaloWidth" format="dimension"/>
+
+        <!-- Text related attributes -->
+        <attr name="showValueText" format="boolean"/>
+        <attr name="textSize" format="dimension"/>
+        <attr name="textColor" format="color"/>
+
+        <!-- Misc attributes -->
         <attr name="max" format="float"/>
         <attr name="min" format="float"/>
-        <attr name="show_divider" format="boolean"/>
-        <attr name="divider_width" format="dimension"/>
-        <attr name="zero_offset" format="integer"/>
-        <attr name="show_text" format="boolean"/>
-        <attr name="interactive" format="boolean"/>
-        <attr name="text_size" format="dimension"/>
-        <attr name="value" format="integer"/>
+        <attr name="cycleValue" format="float"/>
         <attr name="step" format="float"/>
-        <attr name="wheel_active_color" format="color"/>
-        <attr name="wheel_background_color" format="color"/>
-        <attr name="pointer_color" format="color"/>
-        <attr name="pointer_halo_color" format="color"/>
-        <attr name="pointer_halo_width" format="dimension"/>
-        <attr name="text_color" format="color"/>
-        <attr name="show_pointer" format="boolean"/>
+        <attr name="value" format="integer"/>
+        <attr name="zeroOffset" format="integer"/>
+        <attr name="interactive" format="boolean"/>
     </declare-styleable>
 </resources>

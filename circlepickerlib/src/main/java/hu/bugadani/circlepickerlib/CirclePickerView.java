@@ -13,10 +13,12 @@ import android.graphics.RectF;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.support.annotation.NonNull;
+import android.text.Layout;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 
 import com.biowink.clue.ArcUtils;
 
@@ -375,21 +377,21 @@ public class CirclePickerView extends View
                 0
         );
         mPointerRadius = a.getDimension(
-                R.styleable.CirclePickerView_pointer_radius,
+                R.styleable.CirclePickerView_pointerRadius,
                 POINTER_RADIUS_DEF_VALUE
         );
         mPointerHaloWidth = a.getDimension(
-                R.styleable.CirclePickerView_pointer_halo_width,
+                R.styleable.CirclePickerView_pointerHaloWidth,
                 POINTER_HALO_WIDTH_DEF_VALUE
         );
         mWheelRadius = a.getDimension(
-                R.styleable.CirclePickerView_wheel_radius,
+                R.styleable.CirclePickerView_wheelRadius,
                 WHEEL_RADIUS_DEF_VALUE
         );
 
-        mShowValueText = a.getBoolean(R.styleable.CirclePickerView_show_text, true);
-        mShowDivider = a.getBoolean(R.styleable.CirclePickerView_show_divider, false);
-        mShowPointer = a.getBoolean(R.styleable.CirclePickerView_show_pointer, true);
+        mShowValueText = a.getBoolean(R.styleable.CirclePickerView_showValueText, true);
+        mShowDivider = a.getBoolean(R.styleable.CirclePickerView_showDivider, false);
+        mShowPointer = a.getBoolean(R.styleable.CirclePickerView_showPointer, true);
         mInteractionEnabled = a.getBoolean(R.styleable.CirclePickerView_interactive, true);
 
         mAngleHelper.setMaxValue(
@@ -399,10 +401,10 @@ public class CirclePickerView extends View
                 a.getFloat(R.styleable.CirclePickerView_min, MIN_POINT_DEF_VALUE)
         );
         mAngleHelper.setCycleValue(
-                a.getFloat(R.styleable.CirclePickerView_cycle_value, CYCLE_DEF_VALUE)
+                a.getFloat(R.styleable.CirclePickerView_cycleValue, CYCLE_DEF_VALUE)
         );
         mAngleHelper.setZeroOffset(
-                a.getInteger(R.styleable.CirclePickerView_zero_offset, ZERO_OFFSET_DEF_VALUE)
+                a.getInteger(R.styleable.CirclePickerView_zeroOffset, ZERO_OFFSET_DEF_VALUE)
         );
         mAngleHelper.setStep(
                 a.getFloat(R.styleable.CirclePickerView_step, STEP_DEF_VALUE)
@@ -419,37 +421,41 @@ public class CirclePickerView extends View
     {
         //Get size values
         int textSize = a.getDimensionPixelSize(
-                R.styleable.CirclePickerView_text_size,
+                R.styleable.CirclePickerView_textSize,
                 TEXT_SIZE_DEFAULT_VALUE
         );
         float wheelWidth = a.getDimension(
-                R.styleable.CirclePickerView_wheel_stroke_width,
+                R.styleable.CirclePickerView_wheelStrokeWidth,
                 COLOR_WHEEL_STROKE_WIDTH_DEF_VALUE
         );
         float dividerWidth = a.getDimension(
-                R.styleable.CirclePickerView_divider_width,
+                R.styleable.CirclePickerView_dividerWidth,
                 DIVIDER_WIDTH_DEF_VALUE
         );
 
         //Get color values
         int wheelColor = a.getColor(
-                R.styleable.CirclePickerView_wheel_active_color,
+                R.styleable.CirclePickerView_wheelActiveColor,
                 Color.CYAN
         );
         int wheelBackgroundColor = a.getColor(
-                R.styleable.CirclePickerView_wheel_background_color,
+                R.styleable.CirclePickerView_wheelBackgroundColor,
+                Color.DKGRAY
+        );
+        int dividerColor = a.getColor(
+                R.styleable.CirclePickerView_dividerColor,
                 Color.DKGRAY
         );
         int pointerColor = a.getColor(
-                R.styleable.CirclePickerView_pointer_color,
+                R.styleable.CirclePickerView_pointerColor,
                 wheelColor
         );
         int pointerHaloColor = a.getColor(
-                R.styleable.CirclePickerView_pointer_halo_color,
+                R.styleable.CirclePickerView_pointerHaloColor,
                 wheelBackgroundColor
         );
         int textColor = a.getColor(
-                R.styleable.CirclePickerView_text_color,
+                R.styleable.CirclePickerView_textColor,
                 wheelColor
         );
 
@@ -459,7 +465,7 @@ public class CirclePickerView extends View
         mWheelBackgroundPaint.setStrokeWidth(wheelWidth);
 
         mDividerPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        mDividerPaint.setColor(wheelBackgroundColor);
+        mDividerPaint.setColor(dividerColor);
         mDividerPaint.setStrokeWidth(dividerWidth);
 
         mWheelColorPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -486,7 +492,7 @@ public class CirclePickerView extends View
     @Override
     protected void onDraw(Canvas canvas)
     {
-        canvas.translate(mTranslationOffset, mTranslationOffset);
+        canvas.translate(mTranslationOffset + getPaddingLeft(), mTranslationOffset + getPaddingTop());
         canvas.rotate(mAngleHelper.mZeroOffset);
 
         final float colorStartAngle = (float) -90;
@@ -623,26 +629,28 @@ public class CirclePickerView extends View
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec)
     {
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+
+        int smallerSize = Math.min(getMeasuredWidth(), getMeasuredHeight());
+
         if (mWheelRadius == 0) {
-            int widthMode = MeasureSpec.getMode(widthMeasureSpec);
-            if (widthMode != MeasureSpec.UNSPECIFIED) {
-                int width = MeasureSpec.getSize(widthMeasureSpec) - getPaddingLeft() -
-                            getPaddingRight();
-                int height = MeasureSpec.getSize(heightMeasureSpec) - getPaddingTop() -
-                             getPaddingBottom();
+            mWheelRadius = smallerSize / 2 - mPointerRadius - mPointerHaloWidth;
 
-                int min = Math.min(width, height);
-                setMeasuredDimension(min, min);
+            mWheelRadius -= Math.max(
+                    (getPaddingBottom() + getPaddingTop()) / 2,
+                    (getPaddingRight() + getPaddingLeft()) / 2
+            );
 
-                mTranslationOffset = min * 0.5f;
-                mWheelRadius = mTranslationOffset - mPointerRadius - mPointerHaloWidth;
-            }
-
-            super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+            mTranslationOffset = smallerSize / 2;
+            Log.d(TAG, "Automatic radius: " + mWheelRadius);
         } else {
+            mWheelRadius = smallerSize > 0 ? Math.min(smallerSize, mWheelRadius) : mWheelRadius;
+
             mTranslationOffset = (mWheelRadius + mPointerRadius + mPointerHaloWidth);
-            final int w = (int) (2 * mTranslationOffset);
-            setMeasuredDimension(w, w);
+            setMeasuredDimension(
+                    (int)mTranslationOffset * 2 + (getPaddingBottom() + getPaddingTop()),
+                    (int)mTranslationOffset * 2 + (getPaddingRight() + getPaddingLeft())
+            );
         }
 
         mWheelRectangle.set(

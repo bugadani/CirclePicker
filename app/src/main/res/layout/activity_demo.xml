@@ -30,10 +30,10 @@
                 android:id="@+id/rotation"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                app:cycle_value="360"
+                app:cycleValue="360"
                 app:max="180"
                 app:min="-180"
-                app:wheel_radius="50dp"/>
+                app:wheelRadius="50dp"/>
         </LinearLayout>
     </ScrollView>
 
@@ -47,7 +47,6 @@
         android:layout_toEndOf="@id/scroll"
         android:layout_alignParentStart="false"
         android:layout_alignParentTop="true"
-        app:show_divider="true"
         app:step="10"/>
 
 </RelativeLayout>
