@@ -612,8 +612,7 @@ public class CirclePickerView extends View
         if (mShowDivider) {
             double degreePerStep = mAngleHelper.mStep * mAngleHelper.mDegreePerValue;
             float length = mWheelColorPaint.getStrokeWidth() / 2 + 2;
-            for (float i = 0; i < 355; i += degreePerStep) {
-                Log.d(TAG, "" + i);
+            for (float i = 0; i < 358; i += degreePerStep) {
                 canvas.rotate(i);
                 canvas.drawLine(
                         0,
