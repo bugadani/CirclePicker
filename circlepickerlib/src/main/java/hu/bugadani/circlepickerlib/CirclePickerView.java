@@ -118,8 +118,17 @@ public class CirclePickerView extends View
                 return;
             }
 
-            double valuePerCycle = mMaxValue - mMinValue + 1;
+            double valuePerCycle = getCycleValueFromMinMax(mMaxValue, mMinValue);
             computeDegreePerValue(valuePerCycle);
+        }
+
+        private double getCycleValueFromMinMax(double max, double min)
+        {
+            if (min < 0 && max > 0) {
+                return max - min + 1;
+            } else {
+                return Math.abs(max + min);
+            }
         }
 
         public void setCycleValue(double valuePerCycle)
@@ -130,7 +139,7 @@ public class CirclePickerView extends View
                 if (mMinValue == -Float.MAX_VALUE || mMaxValue == Float.MAX_VALUE) {
                     throw new IllegalStateException("Either the limits or the cycle value should be set");
                 }
-                valuePerCycle = mMaxValue - mMinValue + 1;
+                valuePerCycle = getCycleValueFromMinMax(mMaxValue, mMinValue);
             }
             computeDegreePerValue(valuePerCycle);
         }
