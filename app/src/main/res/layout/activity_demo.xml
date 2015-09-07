@@ -30,11 +30,11 @@
                 android:id="@+id/rotation"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                app:dividerColor="#303030"
                 app:max="180"
                 app:min="-180"
-                app:step="15"
                 app:showDivider="true"
-                app:dividerColor="#303030"
+                app:step="15"
                 app:wheelRadius="100dp"/>
 
             <TextView
@@ -70,6 +70,7 @@
         android:layout_toEndOf="@id/scroll"
         android:padding="30dp"
         app:cycleValue="50"
+        app:dividerColor="#303030"
         app:max="100"
         app:min="-20"
         app:step="1"/>

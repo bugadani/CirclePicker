@@ -62,17 +62,12 @@ public class CirclePickerView extends View
         /**
          * Difference of two consequent values
          */
-        private double mStep;
+        private double mValuePerStep;
 
         /**
          * Angle offset for the zero value.
          */
         private int mZeroOffset;
-
-        /**
-         * Indicator to show if the cycle value is explicitly set
-         */
-        private boolean mCycleValueSet = false;
 
         /**
          * Angle between two values
@@ -83,6 +78,11 @@ public class CirclePickerView extends View
          * Helper angle used to compute differences while dragging the pointer
          */
         private double mLastAngle;
+
+        /**
+         * The originally set cycle value
+         */
+        private double mSetCycleValue;
 
         public AngleHelper(CirclePickerView owner)
         {
@@ -109,7 +109,7 @@ public class CirclePickerView extends View
         private void computeCycleValue(double minValue, double maxValue)
         {
             //Don't overwrite explicit settings
-            if (mCycleValueSet) {
+            if (mSetCycleValue != 0) {
                 return;
             }
 
@@ -118,32 +118,40 @@ public class CirclePickerView extends View
                 return;
             }
 
-            double cycleValue = mMaxValue - mMinValue + 1;
-            mDegreePerValue = 360d / cycleValue;
+            double valuePerCycle = mMaxValue - mMinValue + 1;
+            computeDegreePerValue(valuePerCycle);
         }
 
-        public void setCycleValue(double cycleValue)
+        public void setCycleValue(double valuePerCycle)
         {
-            mCycleValueSet = !(cycleValue == 0);
-            if (!mCycleValueSet) {
+            mSetCycleValue = valuePerCycle;
+            if (valuePerCycle == 0) {
                 //Indeterminate size isn't allowed here
                 if (mMinValue == -Float.MAX_VALUE || mMaxValue == Float.MAX_VALUE) {
                     throw new IllegalStateException("Either the limits or the cycle value should be set");
                 }
-                cycleValue = mMaxValue - mMinValue + 1;
+                valuePerCycle = mMaxValue - mMinValue + 1;
             }
-            mDegreePerValue = 360d / cycleValue;
+            computeDegreePerValue(valuePerCycle);
+        }
+
+        private void computeDegreePerValue(double valuePerCycle)
+        {
+            int    stepsPerCycle = (int) (valuePerCycle / mValuePerStep);
+            double degreePerStep = 360d / stepsPerCycle;
+            mDegreePerValue = degreePerStep / mValuePerStep;
         }
 
         public void setStep(float step)
         {
-            mStep = step;
+            mValuePerStep = step;
+            setCycleValue(mSetCycleValue);
             setAngle(mAngle);
         }
 
         private double getClosestValue(double value)
         {
-            return ((int) Math.round(value / mStep)) * mStep;
+            return ((int) Math.round(value / mValuePerStep)) * mValuePerStep;
         }
 
         public void handleTouch(float x, float y)
@@ -440,14 +448,14 @@ public class CirclePickerView extends View
         mAngleHelper.setMinValue(
                 a.getFloat(R.styleable.CirclePickerView_min, MIN_POINT_DEF_VALUE)
         );
+        mAngleHelper.setStep(
+                a.getFloat(R.styleable.CirclePickerView_step, STEP_DEF_VALUE)
+        );
         mAngleHelper.setCycleValue(
                 a.getFloat(R.styleable.CirclePickerView_cycleValue, CYCLE_DEF_VALUE)
         );
         mAngleHelper.setZeroOffset(
                 a.getInteger(R.styleable.CirclePickerView_zeroOffset, ZERO_OFFSET_DEF_VALUE)
-        );
-        mAngleHelper.setStep(
-                a.getFloat(R.styleable.CirclePickerView_step, STEP_DEF_VALUE)
         );
 
         createPaintObjects(a);
@@ -610,15 +618,15 @@ public class CirclePickerView extends View
     {
         //Draw the divider lines if enabled
         if (mShowDivider) {
-            double degreePerStep = mAngleHelper.mStep * mAngleHelper.mDegreePerValue;
+            double degreePerStep = mAngleHelper.mValuePerStep * mAngleHelper.mDegreePerValue;
             float length = mWheelColorPaint.getStrokeWidth() / 2 + 2;
-            for (float i = 0; i < 358; i += degreePerStep) {
+            for (float i = 0; i < 359; i += degreePerStep) {
                 canvas.rotate(i);
                 canvas.drawLine(
                         0,
-                        mWheelRadius + length,
+                        -(mWheelRadius - length),
                         0,
-                        mWheelRadius - length,
+                        -(mWheelRadius + length),
                         mDividerPaint
                 );
                 canvas.rotate(-i);
