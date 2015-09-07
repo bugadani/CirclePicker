@@ -26,8 +26,7 @@ import hu.bugadani.circlepickerlib.formatter.ValueFormatter;
 public class CirclePickerView extends View
 {
 
-    private static final String TAG     = "CirclePickerView";
-    private              PointF mOrigin = new PointF(0, 0);
+    private static final String TAG = "CirclePickerView";
 
     public interface OnValueChangeListener
     {
@@ -272,7 +271,7 @@ public class CirclePickerView extends View
 
     private static final int   TEXT_SIZE_DEFAULT_VALUE            = 25;
     private static final float COLOR_WHEEL_STROKE_WIDTH_DEF_VALUE = 8;
-    private static final float DIVIDER_WIDTH_DEF_VALUE            = 3;
+    private static final float DIVIDER_WIDTH_DEF_VALUE            = 2;
     private static final float POINTER_RADIUS_DEF_VALUE           = 8;
     private static final float WHEEL_RADIUS_DEF_VALUE             = 0;
     private static final float MAX_POINT_DEF_VALUE                = Float.MAX_VALUE;
@@ -283,6 +282,8 @@ public class CirclePickerView extends View
     private static final float STEP_DEF_VALUE                     = 0.1f;
 
     private OnValueChangeListener mOnValueChangeListener;
+
+    private PointF mOrigin = new PointF(0, 0);
 
     /**
      * {@code Paint} instance used to draw the wheel background.
@@ -611,7 +612,8 @@ public class CirclePickerView extends View
         if (mShowDivider) {
             double degreePerStep = mAngleHelper.mStep * mAngleHelper.mDegreePerValue;
             float length = mWheelColorPaint.getStrokeWidth() / 2 + 2;
-            for (int i = 0; i < 360; i += degreePerStep) {
+            for (float i = 0; i < 355; i += degreePerStep) {
+                Log.d(TAG, "" + i);
                 canvas.rotate(i);
                 canvas.drawLine(
                         0,
