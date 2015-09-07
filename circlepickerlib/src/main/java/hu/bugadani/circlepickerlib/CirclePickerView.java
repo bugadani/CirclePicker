@@ -154,7 +154,9 @@ public class CirclePickerView extends View
         public void setStep(float step)
         {
             mValuePerStep = step;
-            setCycleValue(mSetCycleValue);
+            if (mDegreePerValue != 0) {
+                setCycleValue(mSetCycleValue);
+            }
             setAngle(mAngle);
         }
 

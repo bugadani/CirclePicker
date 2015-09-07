@@ -71,7 +71,6 @@
         android:padding="30dp"
         app:cycleValue="50"
         app:dividerColor="#303030"
-        app:max="100"
         app:min="-20"
         app:step="1"/>
 
