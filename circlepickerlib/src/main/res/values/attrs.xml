@@ -25,11 +25,23 @@
         <attr name="textSize" format="dimension"/>
         <attr name="textColor" format="color"/>
 
+        <!-- Label related attributes -->
+        <attr name="labelPosition">
+            <enum name="none" value="0"/>
+            <enum name="above" value="1"/>
+            <enum name="below" value="2"/>
+            <enum name="start" value="3"/>
+            <enum name="end" value="4"/>
+        </attr>
+        <attr name="labelSize" format="dimension"/>
+        <attr name="labelColor" format="color"/>
+        <attr name="label" format="string"/>
+
         <!-- Misc attributes -->
-        <attr name="max" format="float" />
-        <attr name="min" format="float" />
+        <attr name="max" format="float"/>
+        <attr name="min" format="float"/>
         <attr name="cycleValue" format="float">
-            <enum name="auto" value="0" />
+            <enum name="auto" value="0"/>
         </attr>
         <attr name="step" format="float"/>
         <attr name="value" format="integer"/>

@@ -21,31 +21,27 @@
             android:gravity="center_horizontal"
             android:orientation="vertical">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Zero Offset"/>
-
             <hu.bugadani.circlepickerlib.CirclePickerView
                 android:id="@+id/rotation"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 app:dividerColor="#303030"
+                app:label="Rotation"
+                app:labelColor="@android:color/secondary_text_dark"
+                app:labelSize="15sp"
                 app:max="180"
                 app:min="-180"
                 app:showDivider="true"
                 app:step="15"
                 app:wheelRadius="100dp"/>
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Steps"/>
-
             <hu.bugadani.circlepickerlib.CirclePickerView
                 android:id="@+id/steps"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                app:label="Steps"
+                app:labelColor="@android:color/secondary_text_dark"
+                app:labelSize="15sp"
                 app:max="10"
                 app:min="0.1"
                 app:value="1"
@@ -53,16 +49,23 @@
 
             <CheckBox
                 android:id="@+id/show_value_text"
-                android:checked="true"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:checked="true"
                 android:text="Show value text"/>
 
             <CheckBox
-                android:id="@+id/show_pointer"
-                android:checked="true"
+                android:id="@+id/show_label"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:checked="true"
+                android:text="Show label"/>
+
+            <CheckBox
+                android:id="@+id/show_pointer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="true"
                 android:text="Show pointert"/>
 
             <CheckBox
@@ -85,6 +88,7 @@
         android:padding="30dp"
         app:cycleValue="50"
         app:dividerColor="#303030"
+        app:label="This is a label: "
         app:min="-20"
         app:step="1"/>
 

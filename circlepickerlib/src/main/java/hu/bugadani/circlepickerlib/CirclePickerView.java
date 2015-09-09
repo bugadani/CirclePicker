@@ -28,6 +28,15 @@ public class CirclePickerView extends View
 
     private static final String TAG = "CirclePickerView";
 
+    public enum LabelPosition
+    {
+        None,
+        Above,
+        Below,
+        Start,
+        End
+    }
+
     public interface OnValueChangeListener
     {
 
@@ -313,6 +322,11 @@ public class CirclePickerView extends View
         private Paint mTextPaint;
 
         /**
+         * {@code Paint} instance used to draw the label.
+         */
+        private Paint mLabelPaint;
+
+        /**
          * {@code Paint} instance used to draw the divider lines.
          */
         private Paint mDividerPaint;
@@ -338,12 +352,19 @@ public class CirclePickerView extends View
         private final Rect mTextBounds = new Rect();
 
         /**
+         * Bounding box for the label.
+         */
+        private final Rect mLabelBounds = new Rect();
+
+        /**
          * Show a divider between values
          */
-        private boolean mShowDivider;
-        private boolean mShowValueText;
-        private boolean mShowPointer;
-        private float   mWheelRadius;
+        private boolean       mShowDivider;
+        private boolean       mShowValueText;
+        private boolean       mShowPointer;
+        private float         mWheelRadius;
+        private LabelPosition mLabelPosition;
+        private String        mLabel;
 
         /**
          * Number of pixels the origin of this view is moved in X- and Y-direction.
@@ -429,7 +450,7 @@ public class CirclePickerView extends View
             drawDivider(canvas);
             drawPointer(canvas, backgroundStartAngle);
             canvas.rotate(-mAngleHelper.mWheelRotation);
-            drawValueText(canvas, value);
+            drawText(canvas, value);
         }
 
         private void drawDivider(Canvas canvas)
@@ -452,22 +473,124 @@ public class CirclePickerView extends View
             }
         }
 
-        private void drawValueText(Canvas canvas, double value)
+        private void drawText(Canvas canvas, double value)
         {
-            //Draw the value text if enabled
-            if (mShowValueText) {
-                final String text = mValueFormatter.format(value);
+            if (!mShowValueText && mLabelPosition == LabelPosition.None) {
+                return;
+            }
+            //Get the text bounds
+            final float labelLineHeight;
+            final float textLineHeight;
+
+            float labelWidth;
+            float textWidth;
+            float textBaseBelowCenter;
+            float labelBaseBelowCenter;
+
+            String text = "";
+            if (!mShowValueText) {
+                mTextBounds.setEmpty();
+                textWidth = 0;
+                textLineHeight = 0;
+                textBaseBelowCenter = 0;
+            } else {
+                text = mValueFormatter.format(value);
                 mTextPaint.getTextBounds(
                         text,
                         0,
                         text.length(),
                         mTextBounds
                 );
+                final Paint.FontMetrics textFontMetrics = mTextPaint.getFontMetrics();
+                textLineHeight = mTextBounds.height();
+                textBaseBelowCenter = (textFontMetrics.bottom - textLineHeight) / 2f;
+                textWidth = mTextPaint.measureText(text);
+            }
+
+            //Get the label bounds
+            if (mLabelPosition == LabelPosition.None) {
+                mLabelBounds.setEmpty();
+                labelWidth = 0;
+                labelLineHeight = 0;
+                labelBaseBelowCenter = 0;
+            } else {
+                final Paint.FontMetrics labelFontMetrics = mLabelPaint.getFontMetrics();
+                mLabelPaint.getTextBounds(
+                        mLabel,
+                        0,
+                        mLabel.length(),
+                        mLabelBounds
+                );
+                labelLineHeight = mLabelBounds.height();
+                labelBaseBelowCenter = (labelFontMetrics.bottom - labelLineHeight) / 2f;
+                labelWidth = mLabelPaint.measureText(mLabel);
+            }
+
+            final float boxHeight = labelLineHeight + textLineHeight;
+
+            final float top    = mWheelRectangle.centerY() - boxHeight / 2f;
+            final float bottom = mWheelRectangle.centerY() + boxHeight / 2f;
+
+            //Get the text positions
+            float textX  = 0;
+            float textY  = 0;
+            float labelX = 0;
+            float labelY = 0;
+
+            //Common coordinates
+            switch (mLabelPosition) {
+                case None:
+                case Above:
+                case Below:
+                    labelX = mWheelRectangle.centerX() - labelWidth / 2f;
+                    textX = mWheelRectangle.centerX() - textWidth / 2f;
+                    break;
+                case Start:
+                case End:
+                    labelY = mWheelRectangle.centerY() + labelBaseBelowCenter;
+                    textY = mWheelRectangle.centerY() + textBaseBelowCenter;
+                    break;
+            }
+
+            //Differentiating coordinates
+            switch (mLabelPosition) {
+                default:
+                case None:
+                    textY = mWheelRectangle.centerY() - textBaseBelowCenter;
+                    break;
+                case Above:
+                    labelY = top + labelLineHeight / 2f - labelBaseBelowCenter;
+                    textY = bottom + textLineHeight / 2f + textBaseBelowCenter;
+                    break;
+                case Below:
+                    labelY = bottom + labelLineHeight / 2f + labelBaseBelowCenter;
+                    textY = top + textLineHeight / 2f - textBaseBelowCenter;
+                    break;
+                case Start:
+                    labelX = mWheelRectangle.centerX() - Math.max(labelWidth, textWidth) / 2f;
+                    textX = labelX + labelWidth;
+                    break;
+                case End:
+                    textX = mWheelRectangle.centerX() - Math.max(labelWidth, textWidth) / 2f;
+                    labelX = textX + textWidth;
+                    break;
+            }
+
+            //Draw the value text if enabled
+            if (mShowValueText) {
                 canvas.drawText(
                         text,
-                        mWheelRectangle.centerX() - mTextBounds.width() / 2,
-                        mWheelRectangle.centerY() + mTextBounds.height() / 2,
+                        textX,
+                        textY,
                         mTextPaint
+                );
+            }
+            if (mLabelPosition != LabelPosition.None) {
+                canvas.drawText(
+                        mLabel,
+                        labelX,
+                        labelY,
+                        mLabelPaint
                 );
             }
         }
@@ -570,13 +693,29 @@ public class CirclePickerView extends View
             mPointerColorPaint.setColor(pointerColor);
         }
 
-        public void setValueTextSize(int textColor, int textSize)
+        public void setValueTextStyle(int textColor, int textSize)
         {
             mTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.LINEAR_TEXT_FLAG);
             mTextPaint.setColor(textColor);
             mTextPaint.setStyle(Style.FILL_AND_STROKE);
             mTextPaint.setTextAlign(Align.LEFT);
             mTextPaint.setTextSize(textSize);
+        }
+
+        public void setLabelStyle(LabelPosition labelPosition, int labelColor, int labelSize)
+        {
+            mLabelPosition = labelPosition;
+
+            mLabelPaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.LINEAR_TEXT_FLAG);
+            mLabelPaint.setColor(labelColor);
+            mLabelPaint.setStyle(Style.FILL_AND_STROKE);
+            mLabelPaint.setTextAlign(Align.LEFT);
+            mLabelPaint.setTextSize(labelSize);
+        }
+
+        public void setLabel(String label)
+        {
+            mLabel = label != null ? label : "";
         }
     }
 
@@ -682,6 +821,12 @@ public class CirclePickerView extends View
         invalidate();
     }
 
+    public void setLabelPosition(LabelPosition labelPosition)
+    {
+        mRenderer.mLabelPosition = labelPosition;
+        invalidate();
+    }
+
     /**
      * Show or hide the pointer circle
      *
@@ -747,6 +892,10 @@ public class CirclePickerView extends View
                 R.styleable.CirclePickerView_textSize,
                 TEXT_SIZE_DEFAULT_VALUE
         );
+        int labelSize = a.getDimensionPixelSize(
+                R.styleable.CirclePickerView_labelSize,
+                textSize
+        );
         float wheelWidth = a.getDimension(
                 R.styleable.CirclePickerView_wheelStrokeWidth,
                 COLOR_WHEEL_STROKE_WIDTH_DEF_VALUE
@@ -781,6 +930,10 @@ public class CirclePickerView extends View
                 R.styleable.CirclePickerView_textColor,
                 wheelColor
         );
+        int labelColor = a.getColor(
+                R.styleable.CirclePickerView_labelColor,
+                textColor
+        );
         float pointerRadius = a.getDimension(
                 R.styleable.CirclePickerView_pointerRadius,
                 POINTER_RADIUS_DEF_VALUE
@@ -793,6 +946,13 @@ public class CirclePickerView extends View
                 R.styleable.CirclePickerView_wheelRadius,
                 WHEEL_RADIUS_DEF_VALUE
         );
+        final String label = a.getString(R.styleable.CirclePickerView_label);
+        int labelPosition = a.getInt(
+                R.styleable.CirclePickerView_labelPosition,
+                (label == null || label.equals(""))
+                        ? LabelPosition.None.ordinal()
+                        : LabelPosition.Above.ordinal()
+        );
 
         mRenderer.mShowDivider = a.getBoolean(R.styleable.CirclePickerView_showDivider, false);
         mRenderer.mShowPointer = a.getBoolean(R.styleable.CirclePickerView_showPointer, true);
@@ -802,7 +962,9 @@ public class CirclePickerView extends View
         mRenderer.setWheelColorStyle(wheelColor, wheelWidth);
         mRenderer.setDividerStyle(dividerColor, dividerWidth);
         mRenderer.setPointerStyle(pointerColor, pointerHaloColor, pointerRadius, pointerHaloWidth);
-        mRenderer.setValueTextSize(textColor, textSize);
+        mRenderer.setValueTextStyle(textColor, textSize);
+        mRenderer.setLabel(label);
+        mRenderer.setLabelStyle(LabelPosition.values()[labelPosition], labelColor, labelSize);
     }
 
     @Override

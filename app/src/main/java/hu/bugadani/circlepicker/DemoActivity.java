@@ -22,9 +22,10 @@ public class DemoActivity extends AppCompatActivity
         mMainPicker = (CirclePickerView) findViewById(R.id.picker);
         CirclePickerView rotationPicker = (CirclePickerView) findViewById(R.id.rotation);
         CirclePickerView stepPicker     = (CirclePickerView) findViewById(R.id.steps);
-        CheckBox showDivider = (CheckBox) findViewById(R.id.show_dividers);
-        CheckBox showValueText = (CheckBox) findViewById(R.id.show_value_text);
-        CheckBox showPointer = (CheckBox) findViewById(R.id.show_pointer);
+        CheckBox         showDivider    = (CheckBox) findViewById(R.id.show_dividers);
+        CheckBox         showValueText  = (CheckBox) findViewById(R.id.show_value_text);
+        CheckBox         showPointer    = (CheckBox) findViewById(R.id.show_pointer);
+        CheckBox         showLabel      = (CheckBox) findViewById(R.id.show_label);
 
         rotationPicker.setValueFormatter(new SimpleValueFormatter("%.0f°"));
         rotationPicker.setOnValueChangeListener(new CirclePickerView.OnValueChangeListener()
@@ -82,6 +83,19 @@ public class DemoActivity extends AppCompatActivity
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked)
             {
                 mMainPicker.setShowPointer(isChecked);
+            }
+        });
+
+        showLabel.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener()
+        {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked)
+            {
+                mMainPicker.setLabelPosition(
+                        isChecked
+                                ? CirclePickerView.LabelPosition.Above
+                                : CirclePickerView.LabelPosition.None
+                );
             }
         });
     }
