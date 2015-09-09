@@ -285,6 +285,75 @@ public class CirclePickerView extends View
     private class CirclePickerRenderer
     {
 
+        private final PointF mOrigin = new PointF(0, 0);
+
+        /**
+         * {@code Paint} instance used to draw the wheel background.
+         */
+        private Paint mWheelBackgroundPaint;
+
+        /**
+         * {@code Paint} instance used to draw the color wheel.
+         */
+        private Paint mWheelColorPaint;
+
+        /**
+         * {@code Paint} instance used to draw the pointer's "halo".
+         */
+        private Paint mPointerHaloPaint;
+
+        /**
+         * {@code Paint} instance used to draw the pointer (the selected color).
+         */
+        private Paint mPointerColorPaint;
+
+        /**
+         * {@code Paint} instance used to draw the value text.
+         */
+        private Paint mTextPaint;
+
+        /**
+         * {@code Paint} instance used to draw the divider lines.
+         */
+        private Paint mDividerPaint;
+
+        /**
+         * The radius of the pointer (in pixels).
+         */
+        private float mPointerRadius;
+
+        /**
+         * The width of the pointer halo
+         */
+        private float mPointerHaloWidth;
+
+        /**
+         * The rectangle enclosing the color wheel.
+         */
+        private final RectF mWheelRectangle = new RectF();
+
+        /**
+         * Bounding box for the value text.
+         */
+        private final Rect mTextBounds = new Rect();
+
+        /**
+         * Show a divider between values
+         */
+        private boolean mShowDivider;
+        private boolean mShowValueText;
+        private boolean mShowPointer;
+        private float   mWheelRadius;
+
+        /**
+         * Number of pixels the origin of this view is moved in X- and Y-direction.
+         * <p/>
+         * Note: (Re)calculated in {@link #onMeasure(int, int)}.
+         *
+         * @see #onDraw(Canvas)
+         */
+        private float mTranslationOffset;
+
         public void draw(Canvas canvas)
         {
             canvas.translate(
@@ -388,11 +457,16 @@ public class CirclePickerView extends View
             //Draw the value text if enabled
             if (mShowValueText) {
                 final String text = mValueFormatter.format(value);
-                mTextPaint.getTextBounds(text, 0, text.length(), mBounds);
+                mTextPaint.getTextBounds(
+                        text,
+                        0,
+                        text.length(),
+                        mTextBounds
+                );
                 canvas.drawText(
                         text,
-                        mWheelRectangle.centerX() - mBounds.width() / 2,
-                        mWheelRectangle.centerY() + mBounds.height() / 2,
+                        mWheelRectangle.centerX() - mTextBounds.width() / 2,
+                        mWheelRectangle.centerY() + mTextBounds.height() / 2,
                         mTextPaint
                 );
             }
@@ -424,9 +498,9 @@ public class CirclePickerView extends View
             }
         }
 
-        public void measure()
+        public void measure(int measuredWidth, int measuredHeight)
         {
-            int smallerSize = Math.min(getMeasuredWidth(), getMeasuredHeight());
+            int smallerSize = Math.min(measuredWidth, measuredHeight);
 
             if (mWheelRadius == 0) {
                 mWheelRadius = smallerSize / 2 - mPointerRadius - mPointerHaloWidth;
@@ -455,6 +529,55 @@ public class CirclePickerView extends View
                     mWheelRadius
             );
         }
+
+        public void setWheelBackgroundStyle(int wheelBackgroundColor, float wheelRadius, float wheelWidth)
+        {
+            mWheelRadius = wheelRadius;
+
+            mWheelBackgroundPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+            mWheelBackgroundPaint.setColor(wheelBackgroundColor);
+            mWheelBackgroundPaint.setStyle(Style.STROKE);
+            mWheelBackgroundPaint.setStrokeWidth(wheelWidth);
+        }
+
+        public void setWheelColorStyle(int wheelColor, float wheelWidth)
+        {
+            mWheelColorPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+            mWheelColorPaint.setColor(wheelColor);
+            mWheelColorPaint.setStyle(Style.STROKE);
+            mWheelColorPaint.setStrokeWidth(wheelWidth);
+        }
+
+        public void setDividerStyle(int dividerColor, float dividerWidth)
+        {
+            mDividerPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+            mDividerPaint.setColor(dividerColor);
+            mDividerPaint.setStrokeWidth(dividerWidth);
+        }
+
+        public void setPointerStyle(int pointerColor, int pointerHaloColor, float pointerRadius, float pointerHaloWidth)
+        {
+            mPointerRadius = pointerRadius;
+            mPointerHaloWidth = pointerHaloWidth;
+
+            mPointerHaloPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+            mPointerHaloPaint.setStyle(Style.STROKE);
+            mPointerHaloPaint.setStrokeWidth(pointerHaloWidth);
+            mPointerHaloPaint.setColor(pointerHaloColor);
+
+            mPointerColorPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+            mPointerColorPaint.setStyle(Style.FILL);
+            mPointerColorPaint.setColor(pointerColor);
+        }
+
+        public void setValueTextSize(int textColor, int textSize)
+        {
+            mTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.LINEAR_TEXT_FLAG);
+            mTextPaint.setColor(textColor);
+            mTextPaint.setStyle(Style.FILL_AND_STROKE);
+            mTextPaint.setTextAlign(Align.LEFT);
+            mTextPaint.setTextSize(textSize);
+        }
     }
 
     /*
@@ -477,58 +600,6 @@ public class CirclePickerView extends View
 
     private OnValueChangeListener mOnValueChangeListener;
 
-    private PointF mOrigin = new PointF(0, 0);
-
-    /**
-     * {@code Paint} instance used to draw the wheel background.
-     */
-    private Paint mWheelBackgroundPaint;
-
-    /**
-     * {@code Paint} instance used to draw the color wheel.
-     */
-    private Paint mWheelColorPaint;
-
-    /**
-     * {@code Paint} instance used to draw the pointer's "halo".
-     */
-    private Paint mPointerHaloPaint;
-
-    /**
-     * {@code Paint} instance used to draw the pointer (the selected color).
-     */
-    private Paint mPointerColorPaint;
-
-    /**
-     * {@code Paint} instance used to draw the value text.
-     */
-    private Paint mTextPaint;
-
-    /**
-     * {@code Paint} instance used to draw the divider lines.
-     */
-    private Paint mDividerPaint;
-
-    /**
-     * The radius of the pointer (in pixels).
-     */
-    private float mPointerRadius;
-
-    /**
-     * The width of the pointer halo
-     */
-    private float mPointerHaloWidth;
-
-    /**
-     * The rectangle enclosing the color wheel.
-     */
-    private final RectF mWheelRectangle = new RectF();
-
-    /**
-     * Bounding box for the value text.
-     */
-    private final Rect mBounds = new Rect();
-
     /**
      * {@code true} if the user clicked on the pointer to start the move mode.
      * {@code false} once the user stops touching the screen.
@@ -538,26 +609,10 @@ public class CirclePickerView extends View
     private boolean mUserIsMovingPointer = false;
 
     /**
-     * Number of pixels the origin of this view is moved in X- and Y-direction.
-     * <p/>
-     * Note: (Re)calculated in {@link #onMeasure(int, int)}.
-     *
-     * @see #onDraw(Canvas)
-     */
-    private float mTranslationOffset;
-
-    /**
      * {@code ValueFormatter} used to format the displayed text
      */
     private ValueFormatter mValueFormatter = new SimpleValueFormatter("%.1f");
 
-    /**
-     * Show a divider between values
-     */
-    private boolean mShowDivider;
-    private boolean mShowValueText;
-    private boolean mShowPointer;
-    private float   mWheelRadius;
     private boolean mInteractionEnabled;
 
     private final AngleHelper          mAngleHelper = new AngleHelper(this);
@@ -594,7 +649,7 @@ public class CirclePickerView extends View
 
     /**
      * Set the degree by which the wheel will be rotated.
-     *
+     * <p/>
      * 0 is no rotation (0 value is at 12 o'clock position), positive numbers rotate clockwise.
      *
      * @param value
@@ -612,7 +667,7 @@ public class CirclePickerView extends View
      */
     public void setShowDivider(boolean enabled)
     {
-        mShowDivider = enabled;
+        mRenderer.mShowDivider = enabled;
         invalidate();
     }
 
@@ -623,7 +678,7 @@ public class CirclePickerView extends View
      */
     public void setShowValueText(boolean enabled)
     {
-        mShowValueText = enabled;
+        mRenderer.mShowValueText = enabled;
         invalidate();
     }
 
@@ -634,13 +689,13 @@ public class CirclePickerView extends View
      */
     public void setShowPointer(boolean enabled)
     {
-        mShowPointer = enabled;
+        mRenderer.mShowPointer = enabled;
         invalidate();
     }
 
     /**
      * Set the difference between two selectable values
-     *
+     * <p/>
      * Note: this affects the cycle value
      *
      * @param step
@@ -659,22 +714,9 @@ public class CirclePickerView extends View
                 defStyle,
                 0
         );
-        mPointerRadius = a.getDimension(
-                R.styleable.CirclePickerView_pointerRadius,
-                POINTER_RADIUS_DEF_VALUE
-        );
-        mPointerHaloWidth = a.getDimension(
-                R.styleable.CirclePickerView_pointerHaloWidth,
-                POINTER_HALO_WIDTH_DEF_VALUE
-        );
-        mWheelRadius = a.getDimension(
-                R.styleable.CirclePickerView_wheelRadius,
-                WHEEL_RADIUS_DEF_VALUE
-        );
 
-        mShowValueText = a.getBoolean(R.styleable.CirclePickerView_showValueText, true);
-        mShowDivider = a.getBoolean(R.styleable.CirclePickerView_showDivider, false);
-        mShowPointer = a.getBoolean(R.styleable.CirclePickerView_showPointer, true);
+        setRendererStyles(a);
+
         mInteractionEnabled = a.getBoolean(R.styleable.CirclePickerView_interactive, true);
 
         mAngleHelper.setMaxValue(
@@ -693,14 +735,12 @@ public class CirclePickerView extends View
                 a.getInteger(R.styleable.CirclePickerView_wheelRotation, ZERO_OFFSET_DEF_VALUE)
         );
 
-        createPaintObjects(a);
-
         setValue(a.getFloat(R.styleable.CirclePickerView_value, 0));
 
         a.recycle();
     }
 
-    private void createPaintObjects(TypedArray a)
+    private void setRendererStyles(TypedArray a)
     {
         //Get size values
         int textSize = a.getDimensionPixelSize(
@@ -741,35 +781,28 @@ public class CirclePickerView extends View
                 R.styleable.CirclePickerView_textColor,
                 wheelColor
         );
+        float pointerRadius = a.getDimension(
+                R.styleable.CirclePickerView_pointerRadius,
+                POINTER_RADIUS_DEF_VALUE
+        );
+        float pointerHaloWidth = a.getDimension(
+                R.styleable.CirclePickerView_pointerHaloWidth,
+                POINTER_HALO_WIDTH_DEF_VALUE
+        );
+        float wheelRadius = a.getDimension(
+                R.styleable.CirclePickerView_wheelRadius,
+                WHEEL_RADIUS_DEF_VALUE
+        );
 
-        mWheelBackgroundPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        mWheelBackgroundPaint.setColor(wheelBackgroundColor);
-        mWheelBackgroundPaint.setStyle(Style.STROKE);
-        mWheelBackgroundPaint.setStrokeWidth(wheelWidth);
+        mRenderer.mShowDivider = a.getBoolean(R.styleable.CirclePickerView_showDivider, false);
+        mRenderer.mShowPointer = a.getBoolean(R.styleable.CirclePickerView_showPointer, true);
+        mRenderer.mShowValueText = a.getBoolean(R.styleable.CirclePickerView_showValueText, true);
 
-        mDividerPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        mDividerPaint.setColor(dividerColor);
-        mDividerPaint.setStrokeWidth(dividerWidth);
-
-        mWheelColorPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        mWheelColorPaint.setColor(wheelColor);
-        mWheelColorPaint.setStyle(Style.STROKE);
-        mWheelColorPaint.setStrokeWidth(wheelWidth);
-
-        mPointerHaloPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        mPointerHaloPaint.setStyle(Style.STROKE);
-        mPointerHaloPaint.setStrokeWidth(mPointerHaloWidth);
-        mPointerHaloPaint.setColor(pointerHaloColor);
-
-        mPointerColorPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        mPointerColorPaint.setStyle(Style.FILL);
-        mPointerColorPaint.setColor(pointerColor);
-
-        mTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.LINEAR_TEXT_FLAG);
-        mTextPaint.setColor(textColor);
-        mTextPaint.setStyle(Style.FILL_AND_STROKE);
-        mTextPaint.setTextAlign(Align.LEFT);
-        mTextPaint.setTextSize(textSize);
+        mRenderer.setWheelBackgroundStyle(wheelBackgroundColor, wheelRadius, wheelWidth);
+        mRenderer.setWheelColorStyle(wheelColor, wheelWidth);
+        mRenderer.setDividerStyle(dividerColor, dividerWidth);
+        mRenderer.setPointerStyle(pointerColor, pointerHaloColor, pointerRadius, pointerHaloWidth);
+        mRenderer.setValueTextSize(textColor, textSize);
     }
 
     @Override
@@ -783,7 +816,7 @@ public class CirclePickerView extends View
     {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
 
-        mRenderer.measure();
+        mRenderer.measure(getMeasuredWidth(), getMeasuredHeight());
     }
 
     @Override
@@ -793,8 +826,8 @@ public class CirclePickerView extends View
             return false;
         }
         // Convert coordinates to our internal coordinate system
-        float x = event.getX() - mTranslationOffset;
-        float y = event.getY() - mTranslationOffset;
+        float x = event.getX() - mRenderer.mTranslationOffset;
+        float y = event.getY() - mRenderer.mTranslationOffset;
 
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
