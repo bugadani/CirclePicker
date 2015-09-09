@@ -811,10 +811,12 @@ public class CirclePickerView extends View
 
     private void updateValue(double value)
     {
-        if (mOnValueChangeListener != null) {
-            mOnValueChangeListener.onValueChanging(this, value);
+        if (mUserIsMovingPointer) {
+            if (mOnValueChangeListener != null) {
+                mOnValueChangeListener.onValueChanging(this, value);
+            }
+            invalidate();
         }
-        invalidate();
     }
 
     public void setOnValueChangeListener(OnValueChangeListener listener)
