@@ -282,6 +282,181 @@ public class CirclePickerView extends View
         }
     }
 
+    private class CirclePickerRenderer
+    {
+
+        public void draw(Canvas canvas)
+        {
+            canvas.translate(
+                    mTranslationOffset + getPaddingLeft(),
+                    mTranslationOffset + getPaddingTop()
+            );
+            canvas.rotate(mAngleHelper.mZeroOffset);
+
+            final float  colorStartAngle = (float) -90;
+            final double value           = mAngleHelper.getValue();
+
+            float colorSweepAngle = (float) mAngleHelper.getAngle() % 360;
+
+            if (colorSweepAngle < 0) {
+                colorSweepAngle += 360;
+            } else if (value > 0 && colorSweepAngle == 0) {
+                colorSweepAngle = 360;
+            }
+
+            float backgroundStartAngle = (colorStartAngle + colorSweepAngle) % 360;
+            float backgroundSweepAngle = (360 - colorSweepAngle);
+
+            if (value == 0) {
+                // Draw the wheel.
+                ArcUtils.drawArc(
+                        canvas,
+                        mOrigin,
+                        mWheelRadius,
+                        0,
+                        360,
+                        mWheelBackgroundPaint
+                );
+            } else if (value > 0) {
+                // Draw the "background" of the wheel.
+                ArcUtils.drawArc(
+                        canvas,
+                        mOrigin,
+                        mWheelRadius,
+                        backgroundStartAngle,
+                        backgroundSweepAngle,
+                        mWheelBackgroundPaint
+                );
+                // Draw the wheel.
+                ArcUtils.drawArc(
+                        canvas,
+                        mOrigin,
+                        mWheelRadius,
+                        colorStartAngle,
+                        colorSweepAngle,
+                        mWheelColorPaint
+                );
+            } else {
+                // Draw the "background" of the wheel.
+                ArcUtils.drawArc(
+                        canvas,
+                        mOrigin,
+                        mWheelRadius,
+                        backgroundStartAngle,
+                        backgroundSweepAngle,
+                        mWheelColorPaint
+                );
+                // Draw the wheel.
+                ArcUtils.drawArc(
+                        canvas,
+                        mOrigin,
+                        mWheelRadius,
+                        colorStartAngle,
+                        colorSweepAngle,
+                        mWheelBackgroundPaint
+                );
+            }
+
+            drawDivider(canvas);
+            drawPointer(canvas, backgroundStartAngle);
+            canvas.rotate(-mAngleHelper.mZeroOffset);
+            drawValueText(canvas, value);
+        }
+
+        private void drawDivider(Canvas canvas)
+        {
+            //Draw the divider lines if enabled
+            if (mShowDivider) {
+                double degreePerStep = mAngleHelper.mValuePerStep * mAngleHelper.mDegreePerValue;
+                float length = mWheelColorPaint.getStrokeWidth() / 2 + 2;
+                for (float i = 0; i < 360 - degreePerStep / 2; i += degreePerStep) {
+                    canvas.rotate(i);
+                    canvas.drawLine(
+                            0,
+                            -(mWheelRadius - length),
+                            0,
+                            -(mWheelRadius + length),
+                            mDividerPaint
+                    );
+                    canvas.rotate(-i);
+                }
+            }
+        }
+
+        private void drawValueText(Canvas canvas, double value)
+        {
+            //Draw the value text if enabled
+            if (mShowValueText) {
+                final String text = mValueFormatter.format(value);
+                mTextPaint.getTextBounds(text, 0, text.length(), mBounds);
+                canvas.drawText(
+                        text,
+                        mWheelRectangle.centerX() - mBounds.width() / 2,
+                        mWheelRectangle.centerY() + mBounds.height() / 2,
+                        mTextPaint
+                );
+            }
+        }
+
+        private void drawPointer(Canvas canvas, float angle)
+        {
+            if (mShowPointer) {
+                final double backgroundStartRadians = Math.toRadians(angle);
+
+                float pointerX = (float) (mWheelRadius * Math.cos(backgroundStartRadians));
+                float pointerY = (float) (mWheelRadius * Math.sin(backgroundStartRadians));
+
+                // Draw the pointer's "halo"
+                canvas.drawCircle(
+                        pointerX,
+                        pointerY,
+                        mPointerRadius,
+                        mPointerHaloPaint
+                );
+
+                // Draw the pointer (using the currently selected color)
+                canvas.drawCircle(
+                        pointerX,
+                        pointerY,
+                        mPointerRadius,
+                        mPointerColorPaint
+                );
+            }
+        }
+
+        public void measure()
+        {
+            int smallerSize = Math.min(getMeasuredWidth(), getMeasuredHeight());
+
+            if (mWheelRadius == 0) {
+                mWheelRadius = smallerSize / 2 - mPointerRadius - mPointerHaloWidth;
+
+                mWheelRadius -= Math.max(
+                        (getPaddingBottom() + getPaddingTop()) / 2,
+                        (getPaddingRight() + getPaddingLeft()) / 2
+                );
+
+                mTranslationOffset = smallerSize / 2;
+                Log.d(TAG, "Automatic radius: " + mWheelRadius);
+            } else {
+                mWheelRadius = smallerSize > 0 ? Math.min(smallerSize, mWheelRadius) : mWheelRadius;
+
+                mTranslationOffset = (mWheelRadius + mPointerRadius + mPointerHaloWidth);
+                setMeasuredDimension(
+                        (int) mTranslationOffset * 2 + (getPaddingBottom() + getPaddingTop()),
+                        (int) mTranslationOffset * 2 + (getPaddingRight() + getPaddingLeft())
+                );
+            }
+
+            mWheelRectangle.set(
+                    -mWheelRadius,
+                    -mWheelRadius,
+                    mWheelRadius,
+                    mWheelRadius
+            );
+        }
+    }
+
     /*
      * Constants used to save/restore the instance state.
      */
@@ -384,7 +559,9 @@ public class CirclePickerView extends View
     private boolean mShowPointer;
     private float   mWheelRadius;
     private boolean mInteractionEnabled;
-    private AngleHelper mAngleHelper = new AngleHelper(this);
+
+    private final AngleHelper          mAngleHelper = new AngleHelper(this);
+    private final CirclePickerRenderer mRenderer    = new CirclePickerRenderer();
 
     public CirclePickerView(Context context)
     {
@@ -404,6 +581,11 @@ public class CirclePickerView extends View
         init(attrs, defStyle);
     }
 
+    /**
+     * Set the {@code ValueFormatter} instance to format the value text with
+     *
+     * @param formatter
+     */
     public void setValueFormatter(ValueFormatter formatter)
     {
         mValueFormatter = formatter;
@@ -564,139 +746,7 @@ public class CirclePickerView extends View
     @Override
     protected void onDraw(Canvas canvas)
     {
-        canvas.translate(
-                mTranslationOffset + getPaddingLeft(), mTranslationOffset + getPaddingTop());
-        canvas.rotate(mAngleHelper.mZeroOffset);
-
-        final float  colorStartAngle = (float) -90;
-        final double value           = mAngleHelper.getValue();
-
-        float colorSweepAngle = (float) mAngleHelper.getAngle() % 360;
-
-        if (colorSweepAngle < 0) {
-            colorSweepAngle += 360;
-        } else if (value > 0 && colorSweepAngle == 0) {
-            colorSweepAngle = 360;
-        }
-
-        float backgroundStartAngle = (colorStartAngle + colorSweepAngle) % 360;
-        float backgroundSweepAngle = (360 - colorSweepAngle);
-
-        if (value == 0) {
-            // Draw the wheel.
-            ArcUtils.drawArc(
-                    canvas,
-                    mOrigin,
-                    mWheelRadius,
-                    0,
-                    360,
-                    mWheelBackgroundPaint
-            );
-        } else if (value > 0) {
-            // Draw the "background" of the wheel.
-            ArcUtils.drawArc(
-                    canvas,
-                    mOrigin,
-                    mWheelRadius,
-                    backgroundStartAngle,
-                    backgroundSweepAngle,
-                    mWheelBackgroundPaint
-            );
-            // Draw the wheel.
-            ArcUtils.drawArc(
-                    canvas,
-                    mOrigin,
-                    mWheelRadius,
-                    colorStartAngle,
-                    colorSweepAngle,
-                    mWheelColorPaint
-            );
-        } else {
-            // Draw the "background" of the wheel.
-            ArcUtils.drawArc(
-                    canvas,
-                    mOrigin,
-                    mWheelRadius,
-                    backgroundStartAngle,
-                    backgroundSweepAngle,
-                    mWheelColorPaint
-            );
-            // Draw the wheel.
-            ArcUtils.drawArc(
-                    canvas,
-                    mOrigin,
-                    mWheelRadius,
-                    colorStartAngle,
-                    colorSweepAngle,
-                    mWheelBackgroundPaint
-            );
-        }
-
-        drawDivider(canvas);
-        drawPointer(canvas, backgroundStartAngle);
-        canvas.rotate(-mAngleHelper.mZeroOffset);
-        drawValueText(canvas, value);
-    }
-
-    private void drawDivider(Canvas canvas)
-    {
-        //Draw the divider lines if enabled
-        if (mShowDivider) {
-            double degreePerStep = mAngleHelper.mValuePerStep * mAngleHelper.mDegreePerValue;
-            float length = mWheelColorPaint.getStrokeWidth() / 2 + 2;
-            for (float i = 0; i < 360 - degreePerStep / 2; i += degreePerStep) {
-                canvas.rotate(i);
-                canvas.drawLine(
-                        0,
-                        -(mWheelRadius - length),
-                        0,
-                        -(mWheelRadius + length),
-                        mDividerPaint
-                );
-                canvas.rotate(-i);
-            }
-        }
-    }
-
-    private void drawValueText(Canvas canvas, double value)
-    {
-        //Draw the value text if enabled
-        if (mShowValueText) {
-            final String text = mValueFormatter.format(value);
-            mTextPaint.getTextBounds(text, 0, text.length(), mBounds);
-            canvas.drawText(
-                    text,
-                    mWheelRectangle.centerX() - mBounds.width() / 2,
-                    mWheelRectangle.centerY() + mBounds.height() / 2,
-                    mTextPaint
-            );
-        }
-    }
-
-    private void drawPointer(Canvas canvas, float angle)
-    {
-        if (mShowPointer) {
-            final double backgroundStartRadians = Math.toRadians(angle);
-
-            float pointerX = (float) (mWheelRadius * Math.cos(backgroundStartRadians));
-            float pointerY = (float) (mWheelRadius * Math.sin(backgroundStartRadians));
-
-            // Draw the pointer's "halo"
-            canvas.drawCircle(
-                    pointerX,
-                    pointerY,
-                    mPointerRadius,
-                    mPointerHaloPaint
-            );
-
-            // Draw the pointer (using the currently selected color)
-            canvas.drawCircle(
-                    pointerX,
-                    pointerY,
-                    mPointerRadius,
-                    mPointerColorPaint
-            );
-        }
+        mRenderer.draw(canvas);
     }
 
     @Override
@@ -704,34 +754,7 @@ public class CirclePickerView extends View
     {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
 
-        int smallerSize = Math.min(getMeasuredWidth(), getMeasuredHeight());
-
-        if (mWheelRadius == 0) {
-            mWheelRadius = smallerSize / 2 - mPointerRadius - mPointerHaloWidth;
-
-            mWheelRadius -= Math.max(
-                    (getPaddingBottom() + getPaddingTop()) / 2,
-                    (getPaddingRight() + getPaddingLeft()) / 2
-            );
-
-            mTranslationOffset = smallerSize / 2;
-            Log.d(TAG, "Automatic radius: " + mWheelRadius);
-        } else {
-            mWheelRadius = smallerSize > 0 ? Math.min(smallerSize, mWheelRadius) : mWheelRadius;
-
-            mTranslationOffset = (mWheelRadius + mPointerRadius + mPointerHaloWidth);
-            setMeasuredDimension(
-                    (int) mTranslationOffset * 2 + (getPaddingBottom() + getPaddingTop()),
-                    (int) mTranslationOffset * 2 + (getPaddingRight() + getPaddingLeft())
-            );
-        }
-
-        mWheelRectangle.set(
-                -mWheelRadius,
-                -mWheelRadius,
-                mWheelRadius,
-                mWheelRadius
-        );
+        mRenderer.measure();
     }
 
     @Override
@@ -823,5 +846,4 @@ public class CirclePickerView extends View
     {
         mOnValueChangeListener = listener;
     }
-
 }
