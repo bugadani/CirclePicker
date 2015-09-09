@@ -52,6 +52,20 @@
                 app:wheelRadius="100dp"/>
 
             <CheckBox
+                android:id="@+id/show_value_text"
+                android:checked="true"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Show value text"/>
+
+            <CheckBox
+                android:id="@+id/show_pointer"
+                android:checked="true"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Show pointert"/>
+
+            <CheckBox
                 android:id="@+id/show_dividers"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"

@@ -11,10 +11,7 @@ import hu.bugadani.circlepickerlib.formatter.SimpleValueFormatter;
 public class DemoActivity extends AppCompatActivity
 {
 
-    private CirclePickerView mRotationPicker;
     private CirclePickerView mMainPicker;
-    private CheckBox         mShowDivider;
-    private CirclePickerView mStepPicker;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -23,12 +20,14 @@ public class DemoActivity extends AppCompatActivity
         setContentView(R.layout.activity_demo);
 
         mMainPicker = (CirclePickerView) findViewById(R.id.picker);
-        mRotationPicker = (CirclePickerView) findViewById(R.id.rotation);
-        mStepPicker = (CirclePickerView) findViewById(R.id.steps);
-        mShowDivider = (CheckBox) findViewById(R.id.show_dividers);
+        CirclePickerView rotationPicker = (CirclePickerView) findViewById(R.id.rotation);
+        CirclePickerView stepPicker     = (CirclePickerView) findViewById(R.id.steps);
+        CheckBox showDivider = (CheckBox) findViewById(R.id.show_dividers);
+        CheckBox showValueText = (CheckBox) findViewById(R.id.show_value_text);
+        CheckBox showPointer = (CheckBox) findViewById(R.id.show_pointer);
 
-        mRotationPicker.setValueFormatter(new SimpleValueFormatter("%.0f°"));
-        mRotationPicker.setOnValueChangeListener(new CirclePickerView.OnValueChangeListener()
+        rotationPicker.setValueFormatter(new SimpleValueFormatter("%.0f°"));
+        rotationPicker.setOnValueChangeListener(new CirclePickerView.OnValueChangeListener()
         {
             @Override
             public void onValueChanging(CirclePickerView pickerView, double value)
@@ -43,8 +42,8 @@ public class DemoActivity extends AppCompatActivity
             }
         });
 
-        mStepPicker.setValueFormatter(new SimpleValueFormatter("%.1f"));
-        mStepPicker.setOnValueChangeListener(new CirclePickerView.OnValueChangeListener()
+        stepPicker.setValueFormatter(new SimpleValueFormatter("%.1f"));
+        stepPicker.setOnValueChangeListener(new CirclePickerView.OnValueChangeListener()
         {
             @Override
             public void onValueChanging(CirclePickerView pickerView, double value)
@@ -59,12 +58,30 @@ public class DemoActivity extends AppCompatActivity
             }
         });
 
-        mShowDivider.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener()
+        showDivider.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener()
         {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked)
             {
-                mMainPicker.setDividerEnabled(isChecked);
+                mMainPicker.setShowDivider(isChecked);
+            }
+        });
+
+        showValueText.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener()
+        {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked)
+            {
+                mMainPicker.setShowValueText(isChecked);
+            }
+        });
+
+        showPointer.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener()
+        {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked)
+            {
+                mMainPicker.setShowPointer(isChecked);
             }
         });
     }

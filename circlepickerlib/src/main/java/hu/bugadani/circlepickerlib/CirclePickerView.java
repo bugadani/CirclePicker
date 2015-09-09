@@ -407,6 +407,7 @@ public class CirclePickerView extends View
     public void setValueFormatter(ValueFormatter formatter)
     {
         mValueFormatter = formatter;
+        invalidate();
     }
 
     public void setZeroOffset(int value)
@@ -415,9 +416,21 @@ public class CirclePickerView extends View
         invalidate();
     }
 
-    public void setDividerEnabled(boolean enabled)
+    public void setShowDivider(boolean enabled)
     {
         mShowDivider = enabled;
+        invalidate();
+    }
+
+    public void setShowValueText(boolean enabled)
+    {
+        mShowValueText = enabled;
+        invalidate();
+    }
+
+    public void setShowPointer(boolean enabled)
+    {
+        mShowPointer = enabled;
         invalidate();
     }
 
@@ -631,7 +644,7 @@ public class CirclePickerView extends View
         if (mShowDivider) {
             double degreePerStep = mAngleHelper.mValuePerStep * mAngleHelper.mDegreePerValue;
             float length = mWheelColorPaint.getStrokeWidth() / 2 + 2;
-            for (float i = 0; i < 359; i += degreePerStep) {
+            for (float i = 0; i < 360 - degreePerStep / 2; i += degreePerStep) {
                 canvas.rotate(i);
                 canvas.drawLine(
                         0,
