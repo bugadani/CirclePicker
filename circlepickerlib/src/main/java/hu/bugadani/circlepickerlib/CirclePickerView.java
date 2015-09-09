@@ -67,7 +67,7 @@ public class CirclePickerView extends View
         /**
          * Angle offset for the zero value.
          */
-        private int mZeroOffset;
+        private int mWheelRotation;
 
         /**
          * Angle between two values
@@ -89,9 +89,9 @@ public class CirclePickerView extends View
             mOwner = owner;
         }
 
-        public void setZeroOffset(int zeroOffset)
+        public void setWheelRotation(int zeroOffset)
         {
-            mZeroOffset = zeroOffset;
+            mWheelRotation = zeroOffset;
         }
 
         public void setMinValue(double minValue)
@@ -186,7 +186,7 @@ public class CirclePickerView extends View
             final double atg     = Math.atan2(y, x);
             final double degrees = Math.toDegrees(atg);
 
-            return degrees + 90 - mZeroOffset;
+            return degrees + 90 - mWheelRotation;
         }
 
         private double computeAngleForTouch(double angle)
@@ -291,7 +291,7 @@ public class CirclePickerView extends View
                     mTranslationOffset + getPaddingLeft(),
                     mTranslationOffset + getPaddingTop()
             );
-            canvas.rotate(mAngleHelper.mZeroOffset);
+            canvas.rotate(mAngleHelper.mWheelRotation);
 
             final float  colorStartAngle = (float) -90;
             final double value           = mAngleHelper.getValue();
@@ -359,7 +359,7 @@ public class CirclePickerView extends View
 
             drawDivider(canvas);
             drawPointer(canvas, backgroundStartAngle);
-            canvas.rotate(-mAngleHelper.mZeroOffset);
+            canvas.rotate(-mAngleHelper.mWheelRotation);
             drawValueText(canvas, value);
         }
 
@@ -592,30 +592,59 @@ public class CirclePickerView extends View
         invalidate();
     }
 
-    public void setZeroOffset(int value)
+    /**
+     * Set the degree by which the wheel will be rotated.
+     *
+     * 0 is no rotation (0 value is at 12 o'clock position), positive numbers rotate clockwise.
+     *
+     * @param value
+     */
+    public void setWheelRotation(int value)
     {
-        mAngleHelper.setZeroOffset(value);
+        mAngleHelper.setWheelRotation(value);
         invalidate();
     }
 
+    /**
+     * Show or hide the value dividers
+     *
+     * @param enabled True to show, false to hide the dividers
+     */
     public void setShowDivider(boolean enabled)
     {
         mShowDivider = enabled;
         invalidate();
     }
 
+    /**
+     * Show or hide the value text in the middle
+     *
+     * @param enabled
+     */
     public void setShowValueText(boolean enabled)
     {
         mShowValueText = enabled;
         invalidate();
     }
 
+    /**
+     * Show or hide the pointer circle
+     *
+     * @param enabled
+     */
     public void setShowPointer(boolean enabled)
     {
         mShowPointer = enabled;
         invalidate();
     }
 
+    /**
+     * Set the difference between two selectable values
+     *
+     * Note: this affects the cycle value
+     *
+     * @param step
+     */
     public void setSteps(float step)
     {
         mAngleHelper.setStep(step);
@@ -660,8 +689,8 @@ public class CirclePickerView extends View
         mAngleHelper.setCycleValue(
                 a.getFloat(R.styleable.CirclePickerView_cycleValue, CYCLE_DEF_VALUE)
         );
-        mAngleHelper.setZeroOffset(
-                a.getInteger(R.styleable.CirclePickerView_zeroOffset, ZERO_OFFSET_DEF_VALUE)
+        mAngleHelper.setWheelRotation(
+                a.getInteger(R.styleable.CirclePickerView_wheelRotation, ZERO_OFFSET_DEF_VALUE)
         );
 
         createPaintObjects(a);

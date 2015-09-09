@@ -6,6 +6,7 @@
         <attr name="wheelStrokeWidth" format="dimension"/>
         <attr name="wheelActiveColor" format="color"/>
         <attr name="wheelBackgroundColor" format="color"/>
+        <attr name="wheelRotation" format="integer"/>
 
         <!-- Divider related attributes -->
         <attr name="showDivider" format="boolean"/>
@@ -32,7 +33,6 @@
         </attr>
         <attr name="step" format="float"/>
         <attr name="value" format="integer"/>
-        <attr name="zeroOffset" format="integer"/>
         <attr name="interactive" format="boolean"/>
     </declare-styleable>
 </resources>

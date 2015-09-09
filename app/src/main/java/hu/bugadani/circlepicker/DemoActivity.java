@@ -32,7 +32,7 @@ public class DemoActivity extends AppCompatActivity
             @Override
             public void onValueChanging(CirclePickerView pickerView, double value)
             {
-                mMainPicker.setZeroOffset((int) value);
+                mMainPicker.setWheelRotation((int) value);
             }
 
             @Override
