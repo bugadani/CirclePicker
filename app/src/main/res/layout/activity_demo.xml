@@ -33,7 +33,7 @@
                 app:min="-180"
                 app:showDivider="true"
                 app:step="15"
-                app:wheelRadius="100dp"/>
+                app:wheelRadius="125dp"/>
 
             <hu.bugadani.circlepickerlib.CirclePickerView
                 android:id="@+id/steps"
@@ -45,7 +45,7 @@
                 app:max="10"
                 app:min="0.1"
                 app:value="1"
-                app:wheelRadius="100dp"/>
+                app:wheelRadius="125dp"/>
 
             <CheckBox
                 android:id="@+id/show_value_text"

@@ -23,13 +23,11 @@ import com.biowink.clue.ArcUtils;
 import hu.bugadani.circlepickerlib.formatter.SimpleValueFormatter;
 import hu.bugadani.circlepickerlib.formatter.ValueFormatter;
 
-public class CirclePickerView extends View
-{
+public class CirclePickerView extends View {
 
     private static final String TAG = "CirclePickerView";
 
-    public enum LabelPosition
-    {
+    public enum LabelPosition {
         None,
         Above,
         Below,
@@ -37,16 +35,14 @@ public class CirclePickerView extends View
         End
     }
 
-    public interface OnValueChangeListener
-    {
+    public interface OnValueChangeListener {
 
         void onValueChanging(CirclePickerView pickerView, double value);
 
         void onValueChanged(CirclePickerView pickerView, double value);
     }
 
-    private static class AngleHelper
-    {
+    private static class AngleHelper {
 
         /**
          * Reference to the view
@@ -79,6 +75,11 @@ public class CirclePickerView extends View
         private int mWheelRotation;
 
         /**
+         * The wheel radius
+         */
+        private double mWheelRadius;
+
+        /**
          * Angle between two values
          */
         private double mDegreePerValue;
@@ -93,30 +94,29 @@ public class CirclePickerView extends View
          */
         private double mSetCycleValue;
 
-        public AngleHelper(CirclePickerView owner)
-        {
+        public AngleHelper(CirclePickerView owner) {
             mOwner = owner;
         }
 
-        public void setWheelRotation(int zeroOffset)
-        {
+        public void setWheelRotation(int zeroOffset) {
             mWheelRotation = zeroOffset;
         }
 
-        public void setMinValue(double minValue)
-        {
+        public void setWheelRadius(double radius) {
+            mWheelRadius = radius;
+        }
+
+        public void setMinValue(double minValue) {
             mMinValue = minValue;
             computeCycleValue(mMinValue, mMaxValue);
         }
 
-        public void setMaxValue(double maxValue)
-        {
+        public void setMaxValue(double maxValue) {
             mMaxValue = maxValue;
             computeCycleValue(mMinValue, mMaxValue);
         }
 
-        private void computeCycleValue(double minValue, double maxValue)
-        {
+        private void computeCycleValue(double minValue, double maxValue) {
             //Don't overwrite explicit settings
             if (mSetCycleValue != 0) {
                 return;
@@ -131,8 +131,7 @@ public class CirclePickerView extends View
             computeDegreePerValue(valuePerCycle);
         }
 
-        private double getCycleValueFromMinMax(double max, double min)
-        {
+        private double getCycleValueFromMinMax(double max, double min) {
             if (min < 0 && max > 0) {
                 return max - min + 1;
             } else {
@@ -140,8 +139,7 @@ public class CirclePickerView extends View
             }
         }
 
-        public void setCycleValue(double valuePerCycle)
-        {
+        public void setCycleValue(double valuePerCycle) {
             mSetCycleValue = valuePerCycle;
             if (valuePerCycle == 0) {
                 //Indeterminate size isn't allowed here
@@ -153,15 +151,13 @@ public class CirclePickerView extends View
             computeDegreePerValue(valuePerCycle);
         }
 
-        private void computeDegreePerValue(double valuePerCycle)
-        {
-            int    stepsPerCycle = (int) (valuePerCycle / mValuePerStep);
+        private void computeDegreePerValue(double valuePerCycle) {
+            int stepsPerCycle = (int) (valuePerCycle / mValuePerStep);
             double degreePerStep = 360d / stepsPerCycle;
             mDegreePerValue = degreePerStep / mValuePerStep;
         }
 
-        public void setStep(float step)
-        {
+        public void setStep(float step) {
             mValuePerStep = step;
             if (mDegreePerValue != 0) {
                 setCycleValue(mSetCycleValue);
@@ -169,37 +165,40 @@ public class CirclePickerView extends View
             setAngle(mAngle);
         }
 
-        private double getClosestValue(double value)
-        {
+        private double getClosestValue(double value) {
             return ((int) Math.round(value / mValuePerStep)) * mValuePerStep;
         }
 
-        public void handleTouch(float x, float y)
-        {
+        public boolean handleTouch(float x, float y) {
+            double distFromOrigin = Math.hypot(x, y);
+
+            if (distFromOrigin < mWheelRadius * 0.75) {
+                return false;
+            }
+
             final double currentAngleInCycle = getCurrentAngleInCycle(x, y);
-            final double computedAngle       = computeAngleForTouch(currentAngleInCycle);
+            final double computedAngle = computeAngleForTouch(currentAngleInCycle);
+
+            setAngle(computedAngle);
+
+            return true;
+        }
+
+        public void handleDrag(float x, float y) {
+            final double currentAngleInCycle = getCurrentAngleInCycle(x, y);
+            final double computedAngle = computeAngleForMove(currentAngleInCycle);
 
             setAngle(computedAngle);
         }
 
-        public void handleDrag(float x, float y)
-        {
-            final double currentAngleInCycle = getCurrentAngleInCycle(x, y);
-            final double computedAngle       = computeAngleForMove(currentAngleInCycle);
-
-            setAngle(computedAngle);
-        }
-
-        private double getCurrentAngleInCycle(float x, float y)
-        {
-            final double atg     = Math.atan2(y, x);
+        private double getCurrentAngleInCycle(float x, float y) {
+            final double atg = Math.atan2(y, x);
             final double degrees = Math.toDegrees(atg);
 
             return degrees + 90 - mWheelRotation;
         }
 
-        private double computeAngleForTouch(double angle)
-        {
+        private double computeAngleForTouch(double angle) {
             double diff = mod360(angle) - mod360(mAngle);
 
             //For touch, the 180° separates incrementing and decrementing
@@ -214,8 +213,7 @@ public class CirclePickerView extends View
             return limit(mAngle + diff, valueToDegree(mMinValue), valueToDegree(mMaxValue));
         }
 
-        private double computeAngleForMove(double angle)
-        {
+        private double computeAngleForMove(double angle) {
             double diff = mod360(angle) - mod360(mLastAngle);
 
             if (diff < -90) {
@@ -235,8 +233,7 @@ public class CirclePickerView extends View
             return limit(mLastAngle, valueToDegree(mMinValue), valueToDegree(mMaxValue));
         }
 
-        private double mod360(double angle)
-        {
+        private double mod360(double angle) {
             double mod = (angle % 360);
             if (mod < 0) {
                 mod += 360;
@@ -244,14 +241,12 @@ public class CirclePickerView extends View
             return mod;
         }
 
-        private void setAngle(double angle)
-        {
+        private void setAngle(double angle) {
             double value = degreeToValue(angle);
             setValue(value);
         }
 
-        public void setValue(double value)
-        {
+        public void setValue(double value) {
             value = getClosestValue(value);
             mAngle = valueToDegree(value);
             value = limit(value, mMinValue, mMaxValue);
@@ -259,8 +254,7 @@ public class CirclePickerView extends View
             mOwner.updateValue(value);
         }
 
-        private double limit(double number, double min, double max)
-        {
+        private double limit(double number, double min, double max) {
             if (number < min) {
                 return min;
             } else if (number > max) {
@@ -270,29 +264,24 @@ public class CirclePickerView extends View
             }
         }
 
-        public double getValue()
-        {
+        public double getValue() {
             return degreeToValue(getAngle());
         }
 
-        private double degreeToValue(double angle)
-        {
+        private double degreeToValue(double angle) {
             return angle / mDegreePerValue;
         }
 
-        private double valueToDegree(double value)
-        {
+        private double valueToDegree(double value) {
             return value * mDegreePerValue;
         }
 
-        public double getAngle()
-        {
+        public double getAngle() {
             return limit(mAngle, valueToDegree(mMinValue), valueToDegree(mMaxValue));
         }
     }
 
-    private class CirclePickerRenderer
-    {
+    private class CirclePickerRenderer {
 
         private final PointF mOrigin = new PointF(0, 0);
 
@@ -359,12 +348,12 @@ public class CirclePickerView extends View
         /**
          * Show a divider between values
          */
-        private boolean       mShowDivider;
-        private boolean       mShowValueText;
-        private boolean       mShowPointer;
-        private float         mWheelRadius;
+        private boolean mShowDivider;
+        private boolean mShowValueText;
+        private boolean mShowPointer;
+        private float mWheelRadius;
         private LabelPosition mLabelPosition;
-        private String        mLabel;
+        private String mLabel;
 
         /**
          * Number of pixels the origin of this view is moved in X- and Y-direction.
@@ -375,16 +364,15 @@ public class CirclePickerView extends View
          */
         private float mTranslationOffset;
 
-        public void draw(Canvas canvas)
-        {
+        public void draw(Canvas canvas) {
             canvas.translate(
                     mTranslationOffset + getPaddingLeft(),
                     mTranslationOffset + getPaddingTop()
             );
             canvas.rotate(mAngleHelper.mWheelRotation);
 
-            final float  colorStartAngle = (float) -90;
-            final double value           = mAngleHelper.getValue();
+            final float colorStartAngle = (float) -90;
+            final double value = mAngleHelper.getValue();
 
             float colorSweepAngle = (float) mAngleHelper.getAngle() % 360;
 
@@ -453,8 +441,7 @@ public class CirclePickerView extends View
             drawText(canvas, value);
         }
 
-        private void drawDivider(Canvas canvas)
-        {
+        private void drawDivider(Canvas canvas) {
             //Draw the divider lines if enabled
             if (mShowDivider) {
                 double degreePerStep = mAngleHelper.mValuePerStep * mAngleHelper.mDegreePerValue;
@@ -473,8 +460,7 @@ public class CirclePickerView extends View
             }
         }
 
-        private void drawText(Canvas canvas, double value)
-        {
+        private void drawText(Canvas canvas, double value) {
             if (!mShowValueText && mLabelPosition == LabelPosition.None) {
                 return;
             }
@@ -528,12 +514,12 @@ public class CirclePickerView extends View
 
             final float boxHeight = labelLineHeight + textLineHeight;
 
-            final float top    = mWheelRectangle.centerY() - boxHeight / 2f;
+            final float top = mWheelRectangle.centerY() - boxHeight / 2f;
             final float bottom = mWheelRectangle.centerY() + boxHeight / 2f;
 
             //Get the text positions
-            float textX  = 0;
-            float textY  = 0;
+            float textX = 0;
+            float textY = 0;
             float labelX = 0;
             float labelY = 0;
 
@@ -595,8 +581,7 @@ public class CirclePickerView extends View
             }
         }
 
-        private void drawPointer(Canvas canvas, float angle)
-        {
+        private void drawPointer(Canvas canvas, float angle) {
             if (mShowPointer) {
                 final double backgroundStartRadians = Math.toRadians(angle);
 
@@ -621,29 +606,31 @@ public class CirclePickerView extends View
             }
         }
 
-        public void measure(int measuredWidth, int measuredHeight)
-        {
+        public void measure(int measuredWidth, int measuredHeight) {
             int smallerSize = Math.min(measuredWidth, measuredHeight);
 
+            float radius;
             if (mWheelRadius == 0) {
-                mWheelRadius = smallerSize / 2 - mPointerRadius - mPointerHaloWidth;
+                radius = smallerSize / 2 - mPointerRadius - mPointerHaloWidth;
 
-                mWheelRadius -= Math.max(
+                radius -= Math.max(
                         (getPaddingBottom() + getPaddingTop()) / 2,
                         (getPaddingRight() + getPaddingLeft()) / 2
                 );
 
                 mTranslationOffset = smallerSize / 2;
-                Log.d(TAG, "Automatic radius: " + mWheelRadius);
+                Log.d(TAG, "Automatic radius: " + radius);
             } else {
-                mWheelRadius = smallerSize > 0 ? Math.min(smallerSize, mWheelRadius) : mWheelRadius;
+                radius = smallerSize > 0 ? Math.min(smallerSize, mWheelRadius) : mWheelRadius;
 
-                mTranslationOffset = (mWheelRadius + mPointerRadius + mPointerHaloWidth);
+                mTranslationOffset = (radius + mPointerRadius + mPointerHaloWidth);
                 setMeasuredDimension(
                         (int) mTranslationOffset * 2 + (getPaddingBottom() + getPaddingTop()),
                         (int) mTranslationOffset * 2 + (getPaddingRight() + getPaddingLeft())
                 );
             }
+
+            CirclePickerView.this.setWheelRadius(radius);
 
             mWheelRectangle.set(
                     -mWheelRadius,
@@ -653,33 +640,27 @@ public class CirclePickerView extends View
             );
         }
 
-        public void setWheelBackgroundStyle(int wheelBackgroundColor, float wheelRadius, float wheelWidth)
-        {
-            mWheelRadius = wheelRadius;
-
+        public void setWheelBackgroundStyle(int wheelBackgroundColor, float wheelWidth) {
             mWheelBackgroundPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
             mWheelBackgroundPaint.setColor(wheelBackgroundColor);
             mWheelBackgroundPaint.setStyle(Style.STROKE);
             mWheelBackgroundPaint.setStrokeWidth(wheelWidth);
         }
 
-        public void setWheelColorStyle(int wheelColor, float wheelWidth)
-        {
+        public void setWheelColorStyle(int wheelColor, float wheelWidth) {
             mWheelColorPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
             mWheelColorPaint.setColor(wheelColor);
             mWheelColorPaint.setStyle(Style.STROKE);
             mWheelColorPaint.setStrokeWidth(wheelWidth);
         }
 
-        public void setDividerStyle(int dividerColor, float dividerWidth)
-        {
+        public void setDividerStyle(int dividerColor, float dividerWidth) {
             mDividerPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
             mDividerPaint.setColor(dividerColor);
             mDividerPaint.setStrokeWidth(dividerWidth);
         }
 
-        public void setPointerStyle(int pointerColor, int pointerHaloColor, float pointerRadius, float pointerHaloWidth)
-        {
+        public void setPointerStyle(int pointerColor, int pointerHaloColor, float pointerRadius, float pointerHaloWidth) {
             mPointerRadius = pointerRadius;
             mPointerHaloWidth = pointerHaloWidth;
 
@@ -693,8 +674,7 @@ public class CirclePickerView extends View
             mPointerColorPaint.setColor(pointerColor);
         }
 
-        public void setValueTextStyle(int textColor, int textSize)
-        {
+        public void setValueTextStyle(int textColor, int textSize) {
             mTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.LINEAR_TEXT_FLAG);
             mTextPaint.setColor(textColor);
             mTextPaint.setStyle(Style.FILL_AND_STROKE);
@@ -702,8 +682,7 @@ public class CirclePickerView extends View
             mTextPaint.setTextSize(textSize);
         }
 
-        public void setLabelStyle(LabelPosition labelPosition, int labelColor, int labelSize)
-        {
+        public void setLabelStyle(LabelPosition labelPosition, int labelColor, int labelSize) {
             mLabelPosition = labelPosition;
 
             mLabelPaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.LINEAR_TEXT_FLAG);
@@ -713,9 +692,12 @@ public class CirclePickerView extends View
             mLabelPaint.setTextSize(labelSize);
         }
 
-        public void setLabel(String label)
-        {
+        public void setLabel(String label) {
             mLabel = label != null ? label : "";
+        }
+
+        public void setWheelRadius(float wheelRadius) {
+            mWheelRadius = wheelRadius;
         }
     }
 
@@ -723,19 +705,19 @@ public class CirclePickerView extends View
      * Constants used to save/restore the instance state.
      */
     private static final String STATE_PARENT = "parent";
-    private static final String STATE_ANGLE  = "angle";
+    private static final String STATE_ANGLE = "angle";
 
-    private static final int   TEXT_SIZE_DEFAULT_VALUE            = 25;
+    private static final int TEXT_SIZE_DEFAULT_VALUE = 25;
     private static final float COLOR_WHEEL_STROKE_WIDTH_DEF_VALUE = 8;
-    private static final float DIVIDER_WIDTH_DEF_VALUE            = 2;
-    private static final float POINTER_RADIUS_DEF_VALUE           = 8;
-    private static final float WHEEL_RADIUS_DEF_VALUE             = 0;
-    private static final float MAX_POINT_DEF_VALUE                = Float.MAX_VALUE;
-    private static final float MIN_POINT_DEF_VALUE                = -Float.MAX_VALUE;
-    private static final float CYCLE_DEF_VALUE                    = 0;
-    private static final float POINTER_HALO_WIDTH_DEF_VALUE       = 10;
-    private static final int   ZERO_OFFSET_DEF_VALUE              = 0;
-    private static final float STEP_DEF_VALUE                     = 0.1f;
+    private static final float DIVIDER_WIDTH_DEF_VALUE = 2;
+    private static final float POINTER_RADIUS_DEF_VALUE = 8;
+    private static final float WHEEL_RADIUS_DEF_VALUE = 0;
+    private static final float MAX_POINT_DEF_VALUE = Float.MAX_VALUE;
+    private static final float MIN_POINT_DEF_VALUE = -Float.MAX_VALUE;
+    private static final float CYCLE_DEF_VALUE = 0;
+    private static final float POINTER_HALO_WIDTH_DEF_VALUE = 10;
+    private static final int ZERO_OFFSET_DEF_VALUE = 0;
+    private static final float STEP_DEF_VALUE = 0.1f;
 
     private OnValueChangeListener mOnValueChangeListener;
 
@@ -754,23 +736,20 @@ public class CirclePickerView extends View
 
     private boolean mInteractionEnabled;
 
-    private final AngleHelper          mAngleHelper = new AngleHelper(this);
-    private final CirclePickerRenderer mRenderer    = new CirclePickerRenderer();
+    private final AngleHelper mAngleHelper = new AngleHelper(this);
+    private final CirclePickerRenderer mRenderer = new CirclePickerRenderer();
 
-    public CirclePickerView(Context context)
-    {
+    public CirclePickerView(Context context) {
         super(context);
         init(null, 0);
     }
 
-    public CirclePickerView(Context context, AttributeSet attrs)
-    {
+    public CirclePickerView(Context context, AttributeSet attrs) {
         super(context, attrs);
         init(attrs, 0);
     }
 
-    public CirclePickerView(Context context, AttributeSet attrs, int defStyle)
-    {
+    public CirclePickerView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
         init(attrs, defStyle);
     }
@@ -780,8 +759,7 @@ public class CirclePickerView extends View
      *
      * @param formatter
      */
-    public void setValueFormatter(ValueFormatter formatter)
-    {
+    public void setValueFormatter(ValueFormatter formatter) {
         mValueFormatter = formatter;
         invalidate();
     }
@@ -793,9 +771,17 @@ public class CirclePickerView extends View
      *
      * @param value
      */
-    public void setWheelRotation(int value)
-    {
+    public void setWheelRotation(int value) {
         mAngleHelper.setWheelRotation(value);
+        invalidate();
+    }
+
+    /**
+     * Set the wheel radius
+     */
+    public void setWheelRadius(float radius) {
+        mAngleHelper.setWheelRadius(radius);
+        mRenderer.setWheelRadius(radius);
         invalidate();
     }
 
@@ -804,8 +790,7 @@ public class CirclePickerView extends View
      *
      * @param enabled True to show, false to hide the dividers
      */
-    public void setShowDivider(boolean enabled)
-    {
+    public void setShowDivider(boolean enabled) {
         mRenderer.mShowDivider = enabled;
         invalidate();
     }
@@ -815,14 +800,12 @@ public class CirclePickerView extends View
      *
      * @param enabled
      */
-    public void setShowValueText(boolean enabled)
-    {
+    public void setShowValueText(boolean enabled) {
         mRenderer.mShowValueText = enabled;
         invalidate();
     }
 
-    public void setLabelPosition(LabelPosition labelPosition)
-    {
+    public void setLabelPosition(LabelPosition labelPosition) {
         mRenderer.mLabelPosition = labelPosition;
         invalidate();
     }
@@ -832,8 +815,7 @@ public class CirclePickerView extends View
      *
      * @param enabled
      */
-    public void setShowPointer(boolean enabled)
-    {
+    public void setShowPointer(boolean enabled) {
         mRenderer.mShowPointer = enabled;
         invalidate();
     }
@@ -845,14 +827,12 @@ public class CirclePickerView extends View
      *
      * @param step
      */
-    public void setSteps(float step)
-    {
+    public void setSteps(float step) {
         mAngleHelper.setStep(step);
         invalidate();
     }
 
-    private void init(AttributeSet attrs, int defStyle)
-    {
+    private void init(AttributeSet attrs, int defStyle) {
         final TypedArray a = getContext().obtainStyledAttributes(
                 attrs,
                 R.styleable.CirclePickerView,
@@ -885,8 +865,7 @@ public class CirclePickerView extends View
         a.recycle();
     }
 
-    private void setRendererStyles(TypedArray a)
-    {
+    private void setRendererStyles(TypedArray a) {
         //Get size values
         int textSize = a.getDimensionPixelSize(
                 R.styleable.CirclePickerView_textSize,
@@ -954,11 +933,14 @@ public class CirclePickerView extends View
                         : LabelPosition.Above.ordinal()
         );
 
+        mAngleHelper.setWheelRadius(wheelRadius);
+        mRenderer.setWheelRadius(wheelRadius);
+
         mRenderer.mShowDivider = a.getBoolean(R.styleable.CirclePickerView_showDivider, false);
         mRenderer.mShowPointer = a.getBoolean(R.styleable.CirclePickerView_showPointer, true);
         mRenderer.mShowValueText = a.getBoolean(R.styleable.CirclePickerView_showValueText, true);
 
-        mRenderer.setWheelBackgroundStyle(wheelBackgroundColor, wheelRadius, wheelWidth);
+        mRenderer.setWheelBackgroundStyle(wheelBackgroundColor, wheelWidth);
         mRenderer.setWheelColorStyle(wheelColor, wheelWidth);
         mRenderer.setDividerStyle(dividerColor, dividerWidth);
         mRenderer.setPointerStyle(pointerColor, pointerHaloColor, pointerRadius, pointerHaloWidth);
@@ -968,22 +950,19 @@ public class CirclePickerView extends View
     }
 
     @Override
-    protected void onDraw(Canvas canvas)
-    {
+    protected void onDraw(Canvas canvas) {
         mRenderer.draw(canvas);
     }
 
     @Override
-    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec)
-    {
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
 
         mRenderer.measure(getMeasuredWidth(), getMeasuredHeight());
     }
 
     @Override
-    public boolean onTouchEvent(@NonNull MotionEvent event)
-    {
+    public boolean onTouchEvent(@NonNull MotionEvent event) {
         if (!mInteractionEnabled) {
             return false;
         }
@@ -994,13 +973,17 @@ public class CirclePickerView extends View
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 // Check whether the user pressed on (or near) the pointer
-                mAngleHelper.handleTouch(x, y);
-
-                mUserIsMovingPointer = true;
+                if (mAngleHelper.handleTouch(x, y)) {
+                    mUserIsMovingPointer = true;
+                }
                 break;
             case MotionEvent.ACTION_MOVE:
                 if (mUserIsMovingPointer) {
                     mAngleHelper.handleDrag(x, y);
+                    // Fix scrolling
+                    if (getParent() != null) {
+                        getParent().requestDisallowInterceptTouchEvent(true);
+                    }
                 }
                 break;
             case MotionEvent.ACTION_UP:
@@ -1010,17 +993,12 @@ public class CirclePickerView extends View
                 }
                 break;
         }
-        // Fix scrolling
-        if (event.getAction() == MotionEvent.ACTION_MOVE && getParent() != null) {
-            getParent().requestDisallowInterceptTouchEvent(true);
-        }
 
         return true;
     }
 
     @Override
-    protected Parcelable onSaveInstanceState()
-    {
+    protected Parcelable onSaveInstanceState() {
         Parcelable superState = super.onSaveInstanceState();
 
         Bundle state = new Bundle();
@@ -1031,8 +1009,7 @@ public class CirclePickerView extends View
     }
 
     @Override
-    protected void onRestoreInstanceState(Parcelable state)
-    {
+    protected void onRestoreInstanceState(Parcelable state) {
         Bundle savedState = (Bundle) state;
 
         Parcelable superState = savedState.getParcelable(STATE_PARENT);
@@ -1046,18 +1023,15 @@ public class CirclePickerView extends View
      *
      * @return the value between 0 and mMaxValue
      */
-    public double getValue()
-    {
+    public double getValue() {
         return mAngleHelper.getValue();
     }
 
-    public void setValue(double value)
-    {
+    public void setValue(double value) {
         mAngleHelper.setValue(value);
     }
 
-    private void updateValue(double value)
-    {
+    private void updateValue(double value) {
         if (mUserIsMovingPointer) {
             if (mOnValueChangeListener != null) {
                 mOnValueChangeListener.onValueChanging(this, value);
@@ -1066,8 +1040,7 @@ public class CirclePickerView extends View
         }
     }
 
-    public void setOnValueChangeListener(OnValueChangeListener listener)
-    {
+    public void setOnValueChangeListener(OnValueChangeListener listener) {
         mOnValueChangeListener = listener;
     }
 }
