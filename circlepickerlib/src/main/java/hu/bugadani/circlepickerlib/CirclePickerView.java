@@ -11,12 +11,14 @@ import android.graphics.PointF;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.Parcelable;
 import android.support.annotation.NonNull;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewConfiguration;
 
 import com.biowink.clue.ArcUtils;
 
@@ -722,12 +724,23 @@ public class CirclePickerView extends View {
     private OnValueChangeListener mOnValueChangeListener;
 
     /**
+     *
+     */
+    private final Handler mHandler = new Handler();
+
+    /**
      * {@code true} if the user clicked on the pointer to start the move mode.
      * {@code false} once the user stops touching the screen.
      *
      * @see #onTouchEvent(MotionEvent)
      */
     private boolean mUserIsMovingPointer = false;
+
+    /**
+     * {@code true} if the used touched the inside of the wheel
+     */
+    private boolean mPressed = false;
+    private boolean mLongPressed = false;
 
     /**
      * {@code ValueFormatter} used to format the displayed text
@@ -975,6 +988,20 @@ public class CirclePickerView extends View {
                 // Check whether the user pressed on (or near) the pointer
                 if (mAngleHelper.handleTouch(x, y)) {
                     mUserIsMovingPointer = true;
+                    mLongPressed = false;
+                    mPressed = false;
+                } else {
+                    mUserIsMovingPointer = false;
+                    mLongPressed = false;
+                    mPressed = true;
+                    mHandler.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (mPressed && performLongClick()) {
+                                mLongPressed = true;
+                            }
+                        }
+                    }, ViewConfiguration.getLongPressTimeout());
                 }
                 break;
             case MotionEvent.ACTION_MOVE:
@@ -986,10 +1013,19 @@ public class CirclePickerView extends View {
                     }
                 }
                 break;
-            case MotionEvent.ACTION_UP:
+            case MotionEvent.ACTION_CANCEL:
                 mUserIsMovingPointer = false;
-                if (mOnValueChangeListener != null) {
-                    mOnValueChangeListener.onValueChanged(this, mAngleHelper.getValue());
+                mPressed = false;
+                mLongPressed = false;
+                break;
+            case MotionEvent.ACTION_UP:
+                if (mUserIsMovingPointer) {
+                    mUserIsMovingPointer = false;
+                    if (mOnValueChangeListener != null) {
+                        mOnValueChangeListener.onValueChanged(this, mAngleHelper.getValue());
+                    }
+                } else if (!mLongPressed) {
+                    performClick();
                 }
                 break;
         }
