@@ -632,8 +632,9 @@ public class CirclePickerView extends View {
                 );
             }
 
-            CirclePickerView.this.setWheelRadius(radius);
-
+            if (smallerSize > 0) {
+                CirclePickerView.this.setWheelRadius(radius);
+            }
             mWheelRectangle.set(
                     -mWheelRadius,
                     -mWheelRadius,
