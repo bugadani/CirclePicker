@@ -37,6 +37,12 @@ public class CirclePickerView extends View {
         End
     }
 
+    private enum TouchPosition {
+        OnWheel,
+        Inside,
+        Outside
+    }
+
     public interface OnValueChangeListener {
 
         void onValueChanging(CirclePickerView pickerView, double value);
@@ -171,19 +177,21 @@ public class CirclePickerView extends View {
             return ((int) Math.round(value / mValuePerStep)) * mValuePerStep;
         }
 
-        public boolean handleTouch(float x, float y) {
+        public TouchPosition handleTouch(float x, float y) {
             double distFromOrigin = Math.hypot(x, y);
 
-            if (distFromOrigin < mWheelRadius * 0.75) {
-                return false;
+            if (distFromOrigin < mWheelRadius * 0.6) {
+                return TouchPosition.Inside;
+            } else if (distFromOrigin > mWheelRadius * 1.4) {
+                return TouchPosition.Outside;
+            } else {
+                final double currentAngleInCycle = getCurrentAngleInCycle(x, y);
+                final double computedAngle = computeAngleForTouch(currentAngleInCycle);
+
+                setAngle(computedAngle);
+
+                return TouchPosition.OnWheel;
             }
-
-            final double currentAngleInCycle = getCurrentAngleInCycle(x, y);
-            final double computedAngle = computeAngleForTouch(currentAngleInCycle);
-
-            setAngle(computedAngle);
-
-            return true;
         }
 
         public void handleDrag(float x, float y) {
@@ -364,12 +372,13 @@ public class CirclePickerView extends View {
          *
          * @see #onDraw(Canvas)
          */
-        private float mTranslationOffset;
+        private float mTranslationOffsetX;
+        private float mTranslationOffsetY;
 
         public void draw(Canvas canvas) {
             canvas.translate(
-                    mTranslationOffset + getPaddingLeft(),
-                    mTranslationOffset + getPaddingTop()
+                    mTranslationOffsetX + getPaddingLeft(),
+                    mTranslationOffsetY + getPaddingTop()
             );
             canvas.rotate(mAngleHelper.mWheelRotation);
 
@@ -620,15 +629,18 @@ public class CirclePickerView extends View {
                         (getPaddingRight() + getPaddingLeft()) / 2
                 );
 
-                mTranslationOffset = smallerSize / 2;
+                mTranslationOffsetX = measuredWidth / 2;
+                mTranslationOffsetY = measuredHeight / 2;
                 Log.d(TAG, "Automatic radius: " + radius);
             } else {
                 radius = smallerSize > 0 ? Math.min(smallerSize, mWheelRadius) : mWheelRadius;
 
-                mTranslationOffset = (radius + mPointerRadius + mPointerHaloWidth);
+                mTranslationOffsetX = (radius + mPointerRadius + mPointerHaloWidth);
+                mTranslationOffsetY = (radius + mPointerRadius + mPointerHaloWidth);
+
                 setMeasuredDimension(
-                        (int) mTranslationOffset * 2 + (getPaddingBottom() + getPaddingTop()),
-                        (int) mTranslationOffset * 2 + (getPaddingRight() + getPaddingLeft())
+                        (int) mTranslationOffsetX * 2 + (getPaddingBottom() + getPaddingTop()),
+                        (int) mTranslationOffsetY * 2 + (getPaddingRight() + getPaddingLeft())
                 );
             }
 
@@ -981,30 +993,32 @@ public class CirclePickerView extends View {
             return false;
         }
         // Convert coordinates to our internal coordinate system
-        float x = event.getX() - mRenderer.mTranslationOffset;
-        float y = event.getY() - mRenderer.mTranslationOffset;
+        float x = event.getX() - mRenderer.mTranslationOffsetX;
+        float y = event.getY() - mRenderer.mTranslationOffsetY;
 
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 // Check whether the user pressed on (or near) the pointer
-                if (mAngleHelper.handleTouch(x, y)) {
-                    mUserIsMovingPointer = true;
-                    mLongPressed = false;
-                    mPressed = false;
-                } else {
-                    mUserIsMovingPointer = false;
-                    mLongPressed = false;
-                    mPressed = true;
-                    mHandler.postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-                            if (mPressed && performLongClick()) {
-                                mLongPressed = true;
+                switch (mAngleHelper.handleTouch(x, y)) {
+                    case OnWheel:
+                        mUserIsMovingPointer = true;
+                        mLongPressed = false;
+                        mPressed = false;
+                        break;
+                    case Inside:
+                        mUserIsMovingPointer = false;
+                        mLongPressed = false;
+                        mPressed = true;
+                        mHandler.postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                if (mPressed && performLongClick()) {
+                                    mLongPressed = true;
+                                }
                             }
-                        }
-                    }, ViewConfiguration.getLongPressTimeout());
+                        }, ViewConfiguration.getLongPressTimeout());
+                        break;
                 }
-                break;
             case MotionEvent.ACTION_MOVE:
                 if (mUserIsMovingPointer) {
                     mAngleHelper.handleDrag(x, y);
@@ -1025,7 +1039,7 @@ public class CirclePickerView extends View {
                     if (mOnValueChangeListener != null) {
                         mOnValueChangeListener.onValueChanged(this, mAngleHelper.getValue());
                     }
-                } else if (!mLongPressed) {
+                } else if (mPressed && !mLongPressed) {
                     performClick();
                 }
                 break;
